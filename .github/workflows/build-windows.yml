@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -13,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -23,13 +28,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and publish Windows installer
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx electron-builder --win --publish always
+      - name: Build Windows installer
+        run: npx electron-builder --win --publish never
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Get last commit message
+        id: commit_msg
+        shell: bash
+        run: echo "message=$(git log -1 --pretty=%B)" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: SimplePlayer-Windows
-          path: dist/*.exe
+          name: "Release ${{ github.ref_name }}"
+          body: |
+            ## SimplePlayer ${{ github.ref_name }}
+
+            ${{ steps.commit_msg.outputs.message }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/*.exe
+            dist/*.blockmap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
