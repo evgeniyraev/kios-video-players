@@ -22,6 +22,10 @@
       "target": "nsis",
       "icon": "build/icon.ico"
     },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    },
     "nsis": {
       "oneClick": true,
       "allowToChangeInstallationDirectory": false
