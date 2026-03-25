@@ -81,6 +81,11 @@ function createSettingsWindow() {
 
 app.whenReady().then(() => {
   createMainWindow();
+
+  const playlist = loadPlaylist();
+  if (!playlist || playlist.length === 0) {
+    createSettingsWindow();
+  }
 });
 
 app.on('window-all-closed', () => {
