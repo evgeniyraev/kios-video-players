@@ -76,7 +76,6 @@
   <div id="dev-badge"></div>
 
   <script>
-    // Prevent Electron from navigating on file drop
     document.addEventListener('dragover', (e) => e.preventDefault());
     document.addEventListener('drop', (e) => e.preventDefault());
 
@@ -88,115 +87,128 @@
     let playlist = [];
     let currentIndex = 0;
     let hasStarted = false;
+    let autoplay = false;
     let holdTimer = null;
     let statusTimer = null;
 
-    // Show dev badge
     window.api.getIsDev().then(isDev => {
       if (isDev) devBadge.textContent = '[DEV]';
     });
 
     function showStatus(text, duration = 2000) {
       statusOverlay.textContent = text;
-      statusOverlay.style.opacity = '1';
+      statusOverlay.style.opacity = text ? '1' : '0';
       clearTimeout(statusTimer);
-      if (duration > 0) {
-        statusTimer = setTimeout(() => {
-          statusOverlay.style.opacity = '0';
-        }, duration);
+      if (duration > 0 && text) {
+        statusTimer = setTimeout(() => { statusOverlay.style.opacity = '0'; }, duration);
       }
     }
 
-    function loadVideo(index) {
-      if (playlist.length === 0) return;
-      currentIndex = index % playlist.length;
-      const videoPath = playlist[currentIndex];
-      player.src = `file://${videoPath}`;
+    function loadAndPlay(index) {
+      if (!playlist.length) return;
+      currentIndex = index;
+      player.src = `file://${playlist[currentIndex].path}`;
+      player.play();
+      hasStarted = true;
+      showStatus('');
+    }
+
+    function loadFirst() {
+      if (!playlist.length) return;
+      currentIndex = 0;
+      player.src = `file://${playlist[0].path}`;
     }
 
     function playNext() {
       if (currentIndex + 1 >= playlist.length) {
-        // Playlist finished, stop
         hasStarted = false;
-        showStatus('Tap anywhere to play', 0);
-        loadVideo(0);
+        loadFirst();
+        showStatus('Tap anywhere to replay', 0);
         return;
       }
       currentIndex++;
-      loadVideo(currentIndex);
+      player.src = `file://${playlist[currentIndex].path}`;
       player.play();
     }
 
-    // Load playlist on start
-    window.api.getPlaylist().then(list => {
+    // Load playlist and settings together
+    Promise.all([window.api.getPlaylist(), window.api.getSettings()]).then(([list, cfg]) => {
       playlist = list;
+      autoplay = !!cfg.autoplay;
+
       if (playlist.length > 0) {
-        loadVideo(0);
-        showStatus('Tap anywhere to play', 0);
+        loadFirst();
+        if (autoplay) {
+          player.play().catch(() => {});
+          hasStarted = true;
+        } else {
+          showStatus('Tap anywhere to play', 0);
+        }
       } else {
-        showStatus('No videos in playlist. Hold top-left corner for 10s to open settings.', 0);
+        showStatus('No videos. Hold top-left corner 10s to open settings.', 0);
       }
     });
 
-    // Listen for playlist updates from settings
+    // Playlist updated from settings window
     window.api.onPlaylistUpdated(list => {
       playlist = list;
       if (playlist.length > 0 && !hasStarted) {
-        loadVideo(0);
-        showStatus('Tap anywhere to play', 0);
+        loadFirst();
+        if (autoplay) {
+          player.play().catch(() => {});
+          hasStarted = true;
+        } else {
+          showStatus('Tap anywhere to play', 0);
+        }
       } else if (playlist.length === 0) {
         player.src = '';
         hasStarted = false;
-        showStatus('No videos in playlist.', 0);
+        showStatus('No videos. Hold top-left corner 10s to open settings.', 0);
       }
     });
 
-    // Tap to play (only first tap starts playback)
+    // Tap to start (first tap only; second tap does nothing)
     document.getElementById('video-container').addEventListener('click', () => {
-      if (hasStarted || playlist.length === 0) return;
-      hasStarted = true;
-      player.play();
-      showStatus('', 0);
-      statusOverlay.style.opacity = '0';
+      if (hasStarted || !playlist.length) return;
+      loadAndPlay(0);
     });
 
-    // Auto-advance to next video
+    // Video ended
     player.addEventListener('ended', () => {
+      if (!autoplay) return; // stay on last frame
       playNext();
     });
 
-    // Secret button - hold for 10 seconds
+    // Keyboard shortcuts assigned to videos
+    document.addEventListener('keydown', (e) => {
+      if (!playlist.length) return;
+      const index = playlist.findIndex(v => v.key && v.key === e.key);
+      if (index !== -1) {
+        loadAndPlay(index);
+      }
+    });
+
+    // Play a specific video triggered from web remote
+    window.api.onPlayVideoIndex((index) => {
+      if (index >= 0 && index < playlist.length) {
+        loadAndPlay(index);
+      }
+    });
+
+    // Secret button — hold 10 seconds to open settings
     secretBtn.addEventListener('mousedown', (e) => {
       e.stopPropagation();
-      holdTimer = setTimeout(() => {
-        window.api.openSettings();
-      }, 10000);
+      holdTimer = setTimeout(() => window.api.openSettings(), 10000);
     });
-
-    secretBtn.addEventListener('mouseup', () => {
-      clearTimeout(holdTimer);
-    });
-
-    secretBtn.addEventListener('mouseleave', () => {
-      clearTimeout(holdTimer);
-    });
-
-    // Touch support for secret button
+    secretBtn.addEventListener('mouseup', () => clearTimeout(holdTimer));
+    secretBtn.addEventListener('mouseleave', () => clearTimeout(holdTimer));
     secretBtn.addEventListener('touchstart', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      holdTimer = setTimeout(() => {
-        window.api.openSettings();
-      }, 10000);
+      holdTimer = setTimeout(() => window.api.openSettings(), 10000);
     });
-
-    secretBtn.addEventListener('touchend', () => {
-      clearTimeout(holdTimer);
-    });
-
-    secretBtn.addEventListener('touchcancel', () => {
-      clearTimeout(holdTimer);
-    });
+    secretBtn.addEventListener('touchend', () => clearTimeout(holdTimer));
+    secretBtn.addEventListener('touchcancel', () => clearTimeout(holdTimer));
   </script>
 </body>
 </html>

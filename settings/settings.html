@@ -11,66 +11,88 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #1e1e1e;
       color: #ccc;
-      padding: 20px;
       height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
-    h1 {
-      font-size: 18px;
-      margin-bottom: 15px;
-      color: #fff;
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: #252525;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
     }
 
-    #drop-zone {
-      border: 2px dashed #555;
-      border-radius: 8px;
-      padding: 30px;
-      text-align: center;
-      color: #888;
-      margin-bottom: 15px;
-      transition: all 0.2s;
+    .tab {
+      padding: 12px 22px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #777;
       cursor: pointer;
+      font-size: 13px;
+      margin-bottom: -1px;
+    }
+
+    .tab.active { color: #fff; border-bottom-color: #4a9eff; }
+    .tab:hover:not(.active) { color: #bbb; }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .tab-content.active { display: flex; }
+
+    /* Playlist tab */
+    #drop-zone {
+      border: 2px dashed #444;
+      border-radius: 8px;
+      padding: 18px;
+      text-align: center;
+      color: #666;
+      margin-bottom: 14px;
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 13px;
+      transition: all 0.2s;
     }
 
     #drop-zone.drag-over {
       border-color: #4a9eff;
-      background: rgba(74, 158, 255, 0.1);
+      background: rgba(74, 158, 255, 0.08);
       color: #4a9eff;
     }
 
     #playlist {
       flex: 1;
       overflow-y: auto;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
     }
 
     .playlist-item {
       display: flex;
       align-items: center;
-      padding: 8px 12px;
+      padding: 8px 10px;
       background: #2a2a2a;
       border-radius: 4px;
       margin-bottom: 4px;
       cursor: grab;
       user-select: none;
+      gap: 8px;
     }
 
     .playlist-item:active { cursor: grabbing; }
+    .playlist-item.dragging { opacity: 0.4; }
 
-    .playlist-item.dragging {
-      opacity: 0.4;
-    }
+    .item-index { color: #555; min-width: 22px; font-size: 12px; flex-shrink: 0; }
 
-    .playlist-item .index {
-      color: #666;
-      margin-right: 10px;
-      min-width: 24px;
-      font-size: 13px;
-    }
-
-    .playlist-item .name {
+    .item-name {
       flex: 1;
       font-size: 13px;
       white-space: nowrap;
@@ -78,117 +100,416 @@
       text-overflow: ellipsis;
     }
 
-    .playlist-item .remove-btn {
+    .key-btn {
+      background: #333;
+      border: 1px solid #444;
+      color: #888;
+      border-radius: 4px;
+      padding: 3px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      min-width: 64px;
+      text-align: center;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .key-btn:hover { border-color: #666; }
+    .key-btn.listening { background: rgba(74,158,255,0.1); border-color: #4a9eff; color: #4a9eff; }
+    .key-btn.has-key { background: rgba(80,180,80,0.1); border-color: #4a4; color: #6c6; }
+
+    .remove-btn {
       background: none;
       border: none;
-      color: #666;
+      color: #555;
       cursor: pointer;
-      font-size: 18px;
-      padding: 0 4px;
+      font-size: 17px;
+      padding: 0 2px;
       line-height: 1;
+      flex-shrink: 0;
     }
 
-    .playlist-item .remove-btn:hover { color: #e44; }
+    .remove-btn:hover { color: #e44; }
 
-    .buttons {
+    .empty-msg { color: #444; text-align: center; padding: 24px; font-size: 13px; }
+
+    /* General & Web Server tabs */
+    .setting-row {
       display: flex;
-      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 0;
+      border-bottom: 1px solid #272727;
+      gap: 20px;
     }
+
+    .setting-info { flex: 1; }
+    .setting-label { font-size: 14px; color: #ddd; margin-bottom: 3px; }
+    .setting-desc { font-size: 12px; color: #555; }
+
+    /* Toggle */
+    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #3a3a3a;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: #888;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #4a9eff; }
+    .toggle input:checked + .toggle-slider:before { background: #fff; transform: translateX(20px); }
+
+    /* Port input */
+    .port-input {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #ccc;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 13px;
+      width: 90px;
+      text-align: right;
+    }
+
+    #server-info {
+      margin-top: 16px;
+      padding: 16px;
+      background: #222;
+      border: 1px solid #2e2e2e;
+      border-radius: 6px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .qr-box { text-align: center; flex-shrink: 0; }
+
+    #qr-img {
+      width: 150px;
+      height: 150px;
+      background: #fff;
+      padding: 6px;
+      border-radius: 6px;
+      display: block;
+    }
+
+    .qr-label { color: #777; font-size: 11px; margin-top: 6px; }
+
+    .url-section { margin-bottom: 10px; }
+    .url-section:last-child { margin-bottom: 0; }
+
+    .url-heading {
+      font-size: 11px;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .url-list { list-style: none; padding: 0; }
+
+    .url-list a {
+      display: block;
+      font-family: monospace;
+      font-size: 12px;
+      color: #4a9eff;
+      text-decoration: none;
+      padding: 2px 0;
+      cursor: pointer;
+    }
+
+    .url-list a:hover { text-decoration: underline; color: #6fb3ff; }
+
+    #server-urls { flex: 1; min-width: 0; word-break: break-all; }
+
+    /* Buttons */
+    .buttons { display: flex; gap: 10px; flex-shrink: 0; padding-top: 4px; }
 
     button.action {
-      padding: 8px 16px;
+      padding: 8px 18px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       font-size: 13px;
     }
 
-    button.save { background: #4a9eff; color: #fff; }
-    button.save:hover { background: #3a8eef; }
-    button.clear { background: #444; color: #ccc; }
-    button.clear:hover { background: #555; }
+    button.primary { background: #4a9eff; color: #fff; }
+    button.primary:hover { background: #3a8eef; }
+    button.secondary { background: #383838; color: #bbb; }
+    button.secondary:hover { background: #444; }
 
-    .empty-msg {
-      color: #555;
-      text-align: center;
-      padding: 20px;
-      font-size: 14px;
-    }
+    .tab-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid #272727; }
   </style>
 </head>
 <body>
-  <h1>Playlist Settings</h1>
-
-  <div id="drop-zone">
-    Drop video files here or click to browse
+  <div class="tabs">
+    <button class="tab active" data-tab="playlist">Playlist</button>
+    <button class="tab" data-tab="general">General</button>
+    <button class="tab" data-tab="webserver">Web Server</button>
   </div>
 
-  <div id="playlist"></div>
+  <!-- Playlist Tab -->
+  <div id="tab-playlist" class="tab-content active">
+    <div id="drop-zone">Drop video files here or click to browse</div>
+    <div id="playlist"></div>
+    <div class="buttons">
+      <button class="action primary" id="save-playlist-btn">Save Playlist</button>
+      <button class="action secondary" id="clear-btn">Clear All</button>
+    </div>
+  </div>
 
-  <div class="buttons">
-    <button class="action save" id="save-btn">Save Playlist</button>
-    <button class="action clear" id="clear-btn">Clear All</button>
+  <!-- General Tab -->
+  <div id="tab-general" class="tab-content">
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Autoplay</div>
+        <div class="setting-desc">Automatically advance to the next video when the current one ends. When off, the last frame is shown when a video finishes.</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="autoplay-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Start on Windows startup</div>
+        <div class="setting-desc">Launch SimplePlayer automatically when Windows starts.</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="autostart-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="tab-footer">
+      <div class="buttons">
+        <button class="action primary" id="save-general-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Web Server Tab -->
+  <div id="tab-webserver" class="tab-content">
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Enable Web Server</div>
+        <div class="setting-desc">Control playback and manage playlist from any browser on your network.</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="webserver-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Port</div>
+        <div class="setting-desc">Port number the web server listens on.</div>
+      </div>
+      <input type="number" class="port-input" id="port-input" value="3000" min="1024" max="65535">
+    </div>
+    <div id="server-info" style="display:none;">
+      <div class="qr-box">
+        <img id="qr-img" alt="QR code">
+        <div class="qr-label">Scan to open Remote</div>
+      </div>
+      <div id="server-urls">
+        <div class="url-section">
+          <div class="url-heading">Remote</div>
+          <ul class="url-list" id="remote-urls"></ul>
+        </div>
+        <div class="url-section">
+          <div class="url-heading">Web Settings</div>
+          <ul class="url-list" id="settings-urls"></ul>
+        </div>
+      </div>
+    </div>
+    <div class="tab-footer">
+      <div class="buttons">
+        <button class="action primary" id="save-webserver-btn">Save</button>
+      </div>
+    </div>
   </div>
 
   <script>
     let playlist = [];
+    let settings = {};
     let dragIndex = null;
+    let listeningIndex = null;
+    let keyListener = null;
 
+    const videoExtensions = ['mp4', 'webm', 'mkv', 'avi', 'mov', 'wmv', 'flv'];
+    const AVAILABLE_KEYS = [
+      '1','2','3','4','5','6','7','8','9','0',
+      'a','b','c','d','e','f','g','h','i','j','k','l','m',
+      'n','o','p','q','r','s','t','u','v','w','x','y','z',
+    ];
+
+    function nextAvailableKey() {
+      const used = new Set(playlist.filter(i => i.key).map(i => i.key.toLowerCase()));
+      return AVAILABLE_KEYS.find(k => !used.has(k)) || '';
+    }
     const dropZone = document.getElementById('drop-zone');
     const playlistEl = document.getElementById('playlist');
-    const videoExtensions = ['mp4', 'webm', 'mkv', 'avi', 'mov', 'wmv', 'flv'];
 
-    // Prevent Electron from navigating on file drop
     document.addEventListener('dragover', (e) => e.preventDefault());
     document.addEventListener('drop', (e) => e.preventDefault());
 
-    // Load existing playlist
-    window.api.getPlaylist().then(list => {
-      playlist = list.filter(p => typeof p === 'string' && p.length > 0);
-      render();
+    // Load data
+    Promise.all([window.api.getPlaylist(), window.api.getSettings()]).then(([list, cfg]) => {
+      playlist = list;
+      settings = cfg;
+      renderPlaylist();
+      applySettingsToUI();
     });
 
-    function render() {
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        cancelKeyListening();
+      });
+    });
+
+    function applySettingsToUI() {
+      document.getElementById('autoplay-toggle').checked = !!settings.autoplay;
+      document.getElementById('autostart-toggle').checked = !!settings.autostart;
+      const ws = settings.webserver || {};
+      document.getElementById('webserver-toggle').checked = !!ws.enabled;
+      document.getElementById('port-input').value = ws.port || 3000;
+      updateServerInfo();
+    }
+
+    async function updateServerInfo() {
+      const info = document.getElementById('server-info');
+      const enabled = document.getElementById('webserver-toggle').checked;
+      if (!enabled) {
+        info.style.display = 'none';
+        return;
+      }
+
+      const port = parseInt(document.getElementById('port-input').value) || 3000;
+      const ips = await window.api.getNetworkIPs();
+      const hosts = [...ips, 'localhost'];
+
+      const buildList = (pathname) => hosts.map(h => {
+        const url = `http://${h}:${port}${pathname}`;
+        return `<li><a href="#" class="server-link" data-url="${url}">${url}</a></li>`;
+      }).join('');
+
+      document.getElementById('remote-urls').innerHTML = buildList('/remote');
+      document.getElementById('settings-urls').innerHTML = buildList('/settings');
+
+      document.querySelectorAll('.server-link').forEach(a => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.api.openExternal(a.dataset.url);
+        });
+      });
+
+      const primaryHost = ips[0] || 'localhost';
+      const qrUrl = `http://${primaryHost}:${port}/remote`;
+      const dataUrl = await window.api.generateQR(qrUrl);
+      if (dataUrl) document.getElementById('qr-img').src = dataUrl;
+
+      info.style.display = 'flex';
+    }
+
+    document.getElementById('webserver-toggle').addEventListener('change', updateServerInfo);
+    document.getElementById('port-input').addEventListener('input', updateServerInfo);
+
+    function formatKey(key) {
+      if (!key) return 'No key';
+      return key.length === 1 ? key.toUpperCase() : key;
+    }
+
+    function cancelKeyListening() {
+      if (keyListener) {
+        document.removeEventListener('keydown', keyListener);
+        keyListener = null;
+      }
+      listeningIndex = null;
+    }
+
+    function renderPlaylist() {
       if (playlist.length === 0) {
         playlistEl.innerHTML = '<div class="empty-msg">No videos added yet</div>';
         return;
       }
 
-      playlistEl.innerHTML = playlist.map((filePath, i) => {
-        const name = filePath.split(/[/\\]/).pop();
+      playlistEl.innerHTML = playlist.map((item, i) => {
+        const name = (item.path || '').split(/[/\\]/).pop();
+        const hasKey = !!item.key;
+        const keyLabel = hasKey ? formatKey(item.key) : 'No key';
         return `<div class="playlist-item" draggable="true" data-index="${i}">
-          <span class="index">${i + 1}.</span>
-          <span class="name" title="${filePath}">${name}</span>
+          <span class="item-index">${i + 1}.</span>
+          <span class="item-name" title="${item.path}">${name}</span>
+          <button class="key-btn ${hasKey ? 'has-key' : ''}" data-index="${i}">${keyLabel}</button>
           <button class="remove-btn" data-index="${i}">&times;</button>
         </div>`;
       }).join('');
 
-      // Drag & drop reordering
-      document.querySelectorAll('.playlist-item').forEach(item => {
-        item.addEventListener('dragstart', (e) => {
-          dragIndex = parseInt(item.dataset.index);
-          item.classList.add('dragging');
+      // Drag reorder
+      document.querySelectorAll('.playlist-item').forEach(el => {
+        el.addEventListener('dragstart', (e) => {
+          dragIndex = parseInt(el.dataset.index);
+          el.classList.add('dragging');
           e.dataTransfer.effectAllowed = 'move';
         });
-
-        item.addEventListener('dragend', () => {
-          item.classList.remove('dragging');
-          dragIndex = null;
-        });
-
-        item.addEventListener('dragover', (e) => {
+        el.addEventListener('dragend', () => { el.classList.remove('dragging'); dragIndex = null; });
+        el.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+        el.addEventListener('drop', (e) => {
           e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-        });
-
-        item.addEventListener('drop', (e) => {
-          e.preventDefault();
-          const dropIndex = parseInt(item.dataset.index);
-          if (dragIndex !== null && dragIndex !== dropIndex) {
-            const moved = playlist.splice(dragIndex, 1)[0];
-            playlist.splice(dropIndex, 0, moved);
-            render();
+          const dropIdx = parseInt(el.dataset.index);
+          if (dragIndex !== null && dragIndex !== dropIdx) {
+            const [moved] = playlist.splice(dragIndex, 1);
+            playlist.splice(dropIdx, 0, moved);
+            renderPlaylist();
           }
+        });
+      });
+
+      // Key assignment buttons
+      document.querySelectorAll('.key-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.index);
+
+          // Already listening for this index — cancel
+          if (listeningIndex === idx) {
+            cancelKeyListening();
+            renderPlaylist();
+            return;
+          }
+
+          cancelKeyListening();
+          listeningIndex = idx;
+          btn.textContent = 'Press key…';
+          btn.className = 'key-btn listening';
+
+          keyListener = (e) => {
+            e.preventDefault();
+            cancelKeyListening();
+            if (e.key !== 'Escape') {
+              playlist[idx].key = e.key;
+            }
+            renderPlaylist();
+          };
+          document.addEventListener('keydown', keyListener);
         });
       });
 
@@ -196,64 +517,75 @@
       document.querySelectorAll('.remove-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const idx = parseInt(btn.dataset.index);
-          playlist.splice(idx, 1);
-          render();
+          playlist.splice(parseInt(btn.dataset.index), 1);
+          cancelKeyListening();
+          renderPlaylist();
         });
       });
     }
 
-    // Drop zone - file drop
+    // Drop zone
     dropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
       dropZone.classList.add('drag-over');
     });
-
-    dropZone.addEventListener('dragleave', () => {
-      dropZone.classList.remove('drag-over');
-    });
-
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
     dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropZone.classList.remove('drag-over');
-      const files = Array.from(e.dataTransfer.files);
-      const videoPaths = files
-        .filter(f => {
-          const ext = f.name.split('.').pop().toLowerCase();
-          return videoExtensions.includes(ext);
-        })
+      const paths = Array.from(e.dataTransfer.files)
+        .filter(f => videoExtensions.includes(f.name.split('.').pop().toLowerCase()))
         .map(f => window.api.getPathForFile(f))
         .filter(p => p && p.length > 0);
-
-      if (videoPaths.length > 0) {
-        playlist.push(...videoPaths);
-        render();
+      if (paths.length > 0) {
+        paths.forEach(p => playlist.push({ path: p, key: nextAvailableKey() }));
+        renderPlaylist();
       }
     });
-
-    // Click to browse
     dropZone.addEventListener('click', async () => {
       const paths = await window.api.selectVideos();
       if (paths.length > 0) {
-        playlist.push(...paths);
-        render();
+        paths.forEach(p => playlist.push({ path: p, key: nextAvailableKey() }));
+        renderPlaylist();
       }
     });
 
-    // Save
-    document.getElementById('save-btn').addEventListener('click', async () => {
+    // Save playlist
+    document.getElementById('save-playlist-btn').addEventListener('click', async () => {
       await window.api.savePlaylist(playlist);
-      document.getElementById('save-btn').textContent = 'Saved!';
-      setTimeout(() => {
-        document.getElementById('save-btn').textContent = 'Save Playlist';
-      }, 1500);
+      const btn = document.getElementById('save-playlist-btn');
+      btn.textContent = 'Saved!';
+      setTimeout(() => { btn.textContent = 'Save Playlist'; }, 1500);
     });
 
-    // Clear
+    // Clear all
     document.getElementById('clear-btn').addEventListener('click', () => {
       playlist = [];
-      render();
+      cancelKeyListening();
+      renderPlaylist();
+    });
+
+    // Save general settings
+    document.getElementById('save-general-btn').addEventListener('click', async () => {
+      settings.autoplay = document.getElementById('autoplay-toggle').checked;
+      settings.autostart = document.getElementById('autostart-toggle').checked;
+      await window.api.saveSettings(settings);
+      const btn = document.getElementById('save-general-btn');
+      btn.textContent = 'Saved!';
+      setTimeout(() => { btn.textContent = 'Save'; }, 1500);
+    });
+
+    // Save web server settings
+    document.getElementById('save-webserver-btn').addEventListener('click', async () => {
+      settings.webserver = {
+        enabled: document.getElementById('webserver-toggle').checked,
+        port: parseInt(document.getElementById('port-input').value) || 3000,
+      };
+      await window.api.saveSettings(settings);
+      const btn = document.getElementById('save-webserver-btn');
+      btn.textContent = 'Saved!';
+      setTimeout(() => { btn.textContent = 'Save'; }, 1500);
     });
   </script>
 </body>

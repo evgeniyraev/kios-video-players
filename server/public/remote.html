@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SimplePlayer Remote</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    h1 { font-size: 18px; font-weight: 600; }
+
+    nav a {
+      color: #4a9eff;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    nav a:hover { text-decoration: underline; }
+
+    .video-btn {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 14px 16px;
+      background: #1c1c1c;
+      border: 1px solid #282828;
+      border-radius: 8px;
+      color: #eee;
+      cursor: pointer;
+      margin-bottom: 8px;
+      text-align: left;
+      gap: 12px;
+      font-size: 14px;
+      transition: background 0.1s, border-color 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .video-btn:hover { background: #232323; border-color: #333; }
+    .video-btn:active { background: #1a2f1a; border-color: #3a5a3a; }
+
+    .video-btn.playing {
+      background: #0f2a0f;
+      border-color: #2a5a2a;
+    }
+
+    .video-index { color: #444; min-width: 24px; font-size: 12px; flex-shrink: 0; }
+    .video-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .video-key {
+      background: #252525;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: #888;
+      flex-shrink: 0;
+    }
+
+    .play-icon { color: #4a9eff; font-size: 16px; flex-shrink: 0; }
+    .playing-icon { color: #4a4; font-size: 16px; flex-shrink: 0; }
+
+    .empty { color: #444; text-align: center; padding: 50px 20px; font-size: 14px; }
+
+    .feedback {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a3a1a;
+      border: 1px solid #2a5a2a;
+      color: #6c6;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .feedback.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Remote Control</h1>
+    <nav><a href="/settings">Settings</a></nav>
+  </header>
+
+  <div id="list"></div>
+  <div class="feedback" id="feedback"></div>
+
+  <script>
+    let lastPlayed = -1;
+    let feedbackTimer = null;
+
+    async function load() {
+      const res = await fetch('/api/playlist');
+      const list = await res.json();
+      const el = document.getElementById('list');
+
+      if (list.length === 0) {
+        el.innerHTML = '<div class="empty">No videos in playlist.<br>Add videos via the Settings page.</div>';
+        return;
+      }
+
+      el.innerHTML = list.map(item => `
+        <button class="video-btn${item.index === lastPlayed ? ' playing' : ''}" data-index="${item.index}">
+          <span class="video-index">${item.index + 1}</span>
+          <span class="video-name">${item.name}</span>
+          ${item.key ? `<span class="video-key">${item.key.length === 1 ? item.key.toUpperCase() : item.key}</span>` : ''}
+          <span class="${item.index === lastPlayed ? 'playing-icon' : 'play-icon'}">${item.index === lastPlayed ? '▶' : '▶'}</span>
+        </button>
+      `).join('');
+
+      document.querySelectorAll('.video-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const idx = parseInt(btn.dataset.index);
+          await fetch('/api/play/' + idx, { method: 'POST' });
+          lastPlayed = idx;
+          showFeedback(btn.querySelector('.video-name').textContent);
+          load();
+        });
+      });
+    }
+
+    function showFeedback(name) {
+      const el = document.getElementById('feedback');
+      el.textContent = '▶ ' + name;
+      el.classList.add('show');
+      clearTimeout(feedbackTimer);
+      feedbackTimer = setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    load();
+  </script>
+</body>
+</html>
