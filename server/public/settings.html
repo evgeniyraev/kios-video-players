@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SimplePlayer Web Settings</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #111;
+      color: #ddd;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    h1 { font-size: 18px; font-weight: 600; }
+
+    nav a {
+      color: #4a9eff;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    nav a:hover { text-decoration: underline; }
+
+    section { margin-bottom: 28px; }
+
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    /* Upload */
+    .upload-area {
+      border: 2px dashed #333;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      color: #555;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .upload-area:hover { border-color: #555; color: #888; }
+    .upload-area.dragover { border-color: #4a9eff; color: #4a9eff; background: rgba(74,158,255,0.05); }
+
+    .upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .progress { margin-top: 8px; font-size: 12px; color: #4a9eff; min-height: 16px; }
+
+    /* Playlist */
+    .playlist-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      background: #1c1c1c;
+      border: 1px solid #252525;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      gap: 10px;
+    }
+
+    .item-index { color: #444; min-width: 22px; font-size: 12px; flex-shrink: 0; }
+    .item-name { flex: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .key-input {
+      background: #252525;
+      border: 1px solid #333;
+      color: #ccc;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      width: 70px;
+      text-align: center;
+    }
+
+    .key-input:focus { outline: none; border-color: #4a9eff; }
+
+    .remove-btn {
+      background: none;
+      border: none;
+      color: #444;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0 2px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .remove-btn:hover { color: #e44; }
+
+    .empty { color: #444; text-align: center; padding: 20px; font-size: 13px; }
+
+    /* Setting rows */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid #1e1e1e;
+    }
+
+    .setting-label { font-size: 14px; }
+    .setting-desc { font-size: 12px; color: #555; margin-top: 2px; }
+
+    /* Toggle */
+    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #2a2a2a;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: #666;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #4a9eff; }
+    .toggle input:checked + .toggle-slider:before { background: #fff; transform: translateX(20px); }
+
+    /* Buttons */
+    .save-btn {
+      margin-top: 16px;
+      padding: 9px 22px;
+      background: #4a9eff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .save-btn:hover { background: #3a8eef; }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a2a1a;
+      border: 1px solid #2a5a2a;
+      color: #6c6;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Settings</h1>
+    <nav><a href="/remote">Remote</a></nav>
+  </header>
+
+  <!-- Upload -->
+  <section>
+    <h2>Add Videos</h2>
+    <label class="upload-area" id="upload-area">
+      <input type="file" id="file-input" accept="video/mp4,video/webm,video/x-matroska,video/avi,video/quicktime,video/x-ms-wmv" multiple>
+      Tap to browse or drag video files here
+    </label>
+    <div class="progress" id="progress"></div>
+  </section>
+
+  <!-- Playlist -->
+  <section>
+    <h2>Playlist</h2>
+    <div id="playlist"></div>
+    <button class="save-btn" id="save-playlist-btn">Save Playlist</button>
+  </section>
+
+  <!-- Playback -->
+  <section>
+    <h2>Playback</h2>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Autoplay</div>
+        <div class="setting-desc">Auto-advance to next video when current one ends</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="autoplay-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <button class="save-btn" id="save-settings-btn">Save Settings</button>
+  </section>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let playlist = [];
+    let settings = {};
+    let toastTimer = null;
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    async function loadData() {
+      const [plRes, cfgRes] = await Promise.all([fetch('/api/playlist'), fetch('/api/settings')]);
+      playlist = await plRes.json();
+      settings = await cfgRes.json();
+      renderPlaylist();
+      document.getElementById('autoplay-toggle').checked = !!settings.autoplay;
+    }
+
+    function renderPlaylist() {
+      const el = document.getElementById('playlist');
+      if (playlist.length === 0) {
+        el.innerHTML = '<div class="empty">No videos yet. Upload some above.</div>';
+        return;
+      }
+      el.innerHTML = playlist.map((item, i) => `
+        <div class="playlist-item" data-index="${i}">
+          <span class="item-index">${i + 1}.</span>
+          <span class="item-name" title="${item.path}">${item.name}</span>
+          <input class="key-input" placeholder="Key" value="${item.key || ''}" data-index="${i}" maxlength="10">
+          <button class="remove-btn" data-index="${i}">&times;</button>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('.key-input').forEach(input => {
+        input.addEventListener('keydown', (e) => {
+          e.preventDefault();
+          if (e.key === 'Escape') { input.blur(); return; }
+          input.value = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+          playlist[parseInt(input.dataset.index)].key = e.key;
+          input.blur();
+        });
+      });
+
+      document.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          playlist.splice(parseInt(btn.dataset.index), 1);
+          renderPlaylist();
+        });
+      });
+    }
+
+    // Upload
+    const fileInput = document.getElementById('file-input');
+    const uploadArea = document.getElementById('upload-area');
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      await uploadFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', async () => {
+      await uploadFiles(fileInput.files);
+      fileInput.value = '';
+    });
+
+    async function uploadFiles(files) {
+      const prog = document.getElementById('progress');
+      for (let i = 0; i < files.length; i++) {
+        prog.textContent = `Uploading ${files[i].name}… (${i + 1}/${files.length})`;
+        const fd = new FormData();
+        fd.append('video', files[i]);
+        await fetch('/api/upload', { method: 'POST', body: fd });
+      }
+      prog.textContent = '';
+      showToast('Upload complete');
+      await loadData();
+    }
+
+    // Save playlist
+    document.getElementById('save-playlist-btn').addEventListener('click', async () => {
+      const toSave = playlist.map(({ path, key }) => ({ path, key }));
+      await fetch('/api/playlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(toSave),
+      });
+      showToast('Playlist saved');
+    });
+
+    // Save settings
+    document.getElementById('save-settings-btn').addEventListener('click', async () => {
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoplay: document.getElementById('autoplay-toggle').checked }),
+      });
+      showToast('Settings saved');
+    });
+
+    loadData();
+  </script>
+</body>
+</html>
