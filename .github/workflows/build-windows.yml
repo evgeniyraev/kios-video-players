@@ -34,7 +34,12 @@ jobs:
       - name: Get last commit message
         id: commit_msg
         shell: bash
-        run: echo "message=$(git log -1 --pretty=%B)" >> "$GITHUB_OUTPUT"
+        run: |
+          {
+            echo "message<<COMMIT_MSG_EOF"
+            git log -1 --pretty=%B
+            echo "COMMIT_MSG_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
