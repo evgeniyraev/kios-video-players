@@ -177,10 +177,16 @@
       }
     }
 
+    function loadVideo(index) {
+      currentIndex = index;
+      const item = playlist[currentIndex];
+      player.loop = !!item.loop;
+      player.src = `file://${item.path}`;
+    }
+
     function loadAndPlay(index) {
       if (!playlist.length) return;
-      currentIndex = index;
-      player.src = `file://${playlist[currentIndex].path}`;
+      loadVideo(index);
       player.play();
       hasStarted = true;
       showStatus('');
@@ -257,8 +263,7 @@
 
     function loadFirst() {
       if (!playlist.length) return;
-      currentIndex = 0;
-      player.src = `file://${playlist[0].path}`;
+      loadVideo(0);
     }
 
     function playNext() {
@@ -269,8 +274,7 @@
         renderMenu();
         return;
       }
-      currentIndex++;
-      player.src = `file://${playlist[currentIndex].path}`;
+      loadVideo(currentIndex + 1);
       player.play();
       renderMenu();
     }

@@ -85,7 +85,7 @@ function createWebServer({ port, uploadDir, iconDir, loadPlaylist, savePlaylist,
   app.post('/api/upload', upload.single('video'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const playlist = loadPlaylist();
-    playlist.push({ path: req.file.path, key: nextAvailableKey(playlist), icon: '' });
+    playlist.push({ path: req.file.path, key: nextAvailableKey(playlist), icon: '', loop: false });
     savePlaylist(playlist);
     const mw = getMainWindow();
     if (mw) mw.webContents.send('playlist-updated', playlist);

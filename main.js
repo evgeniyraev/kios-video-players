@@ -19,9 +19,9 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 if (!fs.existsSync(iconDir)) fs.mkdirSync(iconDir, { recursive: true });
 
 function normalizeItem(item) {
-  if (typeof item === 'string') return { path: item, key: '', icon: '' };
+  if (typeof item === 'string') return { path: item, key: '', icon: '', loop: false };
   if (!item || typeof item !== 'object') return null;
-  return { path: item.path || '', key: item.key || '', icon: item.icon || '' };
+  return { path: item.path || '', key: item.key || '', icon: item.icon || '', loop: !!item.loop };
 }
 
 function loadPlaylist() {

@@ -100,6 +100,21 @@
       text-overflow: ellipsis;
     }
 
+    .loop-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #888;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .loop-toggle input {
+      accent-color: #4a9eff;
+      cursor: pointer;
+    }
+
     .key-btn {
       background: #333;
       border: 1px solid #444;
@@ -470,10 +485,10 @@
 
         <div class="setting-row">
           <div class="setting-info">
-            <div class="setting-label">Custom helper icon</div>
-            <div class="setting-desc">Optional image used in place of the default helper graphic.</div>
+            <div class="setting-label">Helper icon</div>
+            <div class="setting-desc">Default decorative icon, or upload a custom one.</div>
           </div>
-          <button class="icon-btn" id="helper-icon-btn" title="Add icon">+</button>
+          <div class="icon-picker" id="helper-icon-picker"></div>
         </div>
       </div>
     </div>
@@ -700,21 +715,13 @@
     document.getElementById('menu-enabled-toggle').addEventListener('change', updateMenuDisabled);
     document.getElementById('menu-edge').addEventListener('change', updateOffsetDesc);
 
-    document.querySelectorAll('#home-style-group .radio-pill').forEach(p => {
-      p.addEventListener('click', () => {
-        document.querySelectorAll('#home-style-group .radio-pill').forEach(x => x.classList.remove('active'));
-        p.classList.add('active');
-      });
-    });
-
     document.getElementById('save-menu-btn').addEventListener('click', async () => {
-      const homeStyleEl = document.querySelector('#home-style-group .radio-pill.active');
       const prev = settings.menu || {};
       settings.menu = {
         enabled: document.getElementById('menu-enabled-toggle').checked,
         edge: document.getElementById('menu-edge').value,
         offset: parseInt(document.getElementById('menu-offset').value) || 0,
-        homeStyle: homeStyleEl ? homeStyleEl.dataset.value : 'house',
+        homeStyle: prev.homeStyle || 'house',
         homeIcon: prev.homeIcon || '',
         homeIndex: parseInt(document.getElementById('home-index').value) || 0,
         showHelper: document.getElementById('helper-toggle').checked,
@@ -733,15 +740,10 @@
       renderPlaylist();
     });
 
-    const HOME_ICON_SVGS = {
-      house: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="20,12 4,12 4,8 12,2 20,8 20,12"/><rect x="9.5" y="13" width="5" height="6"/></svg>',
-      burger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="7" x2="19" y2="7"/><line x1="5" y1="12" x2="19" y2="12"/><line x1="5" y1="17" x2="19" y2="17"/></svg>',
-    };
-
     function homeIconHTML() {
       const m = settings.menu || {};
       if (m.homeIcon) return `<img src="file://${m.homeIcon}" alt="">`;
-      return HOME_ICON_SVGS[m.homeStyle === 'burger' ? 'burger' : 'house'];
+      return BUILTIN_ICONS[m.homeStyle === 'burger' ? 'burger' : 'house'];
     }
 
     async function updateServerInfo() {
@@ -821,6 +823,10 @@
           <span class="item-index">${i + 1}.</span>
           ${iconButton}
           <span class="item-name" title="${item.path}">${name}</span>
+          <label class="loop-toggle" title="Loop this video">
+            <input type="checkbox" data-loop="${i}" ${item.loop ? 'checked' : ''}>
+            <span>Loop</span>
+          </label>
           <button class="key-btn ${hasKey ? 'has-key' : ''}" data-index="${i}">${keyLabel}</button>
           <button class="remove-btn" data-index="${i}">&times;</button>
         </div>`;
@@ -845,6 +851,15 @@
           const idx = parseInt(el.dataset.clear);
           playlist[idx].icon = '';
           renderPlaylist();
+        });
+      });
+
+      document.querySelectorAll('input[data-loop]').forEach(input => {
+        input.addEventListener('click', (e) => e.stopPropagation());
+        input.addEventListener('change', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(input.dataset.loop);
+          playlist[idx].loop = input.checked;
         });
       });
 
@@ -931,14 +946,14 @@
         .map(f => window.api.getPathForFile(f))
         .filter(p => p && p.length > 0);
       if (paths.length > 0) {
-        paths.forEach(p => playlist.push({ path: p, key: nextAvailableKey() }));
+        paths.forEach(p => playlist.push({ path: p, key: nextAvailableKey(), icon: '', loop: false }));
         renderPlaylist();
       }
     });
     dropZone.addEventListener('click', async () => {
       const paths = await window.api.selectVideos();
       if (paths.length > 0) {
-        paths.forEach(p => playlist.push({ path: p, key: nextAvailableKey() }));
+        paths.forEach(p => playlist.push({ path: p, key: nextAvailableKey(), icon: '', loop: false }));
         renderPlaylist();
       }
     });
