@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -56,6 +56,7 @@ const defaultSettings = {
     showHelper: true,
     helperIcon: '',
   },
+  secretButton: { corner: 'top-left' },
 };
 
 function loadSettings() {
@@ -67,12 +68,18 @@ function loadSettings() {
         ...saved,
         webserver: { ...defaultSettings.webserver, ...(saved.webserver || {}) },
         menu: { ...defaultSettings.menu, ...(saved.menu || {}) },
+        secretButton: { ...defaultSettings.secretButton, ...(saved.secretButton || {}) },
       };
     }
   } catch (e) {
     console.error('Failed to load settings:', e);
   }
-  return { ...defaultSettings, menu: { ...defaultSettings.menu }, webserver: { ...defaultSettings.webserver } };
+  return {
+    ...defaultSettings,
+    menu: { ...defaultSettings.menu },
+    webserver: { ...defaultSettings.webserver },
+    secretButton: { ...defaultSettings.secretButton },
+  };
 }
 
 function saveSettings(settings) {
@@ -108,6 +115,46 @@ function stopWebServer() {
     webServerInstance.close();
     webServerInstance = null;
   }
+}
+
+function buildAppMenu() {
+  const isMac = process.platform === 'darwin';
+  const settingsItem = {
+    label: 'Settings…',
+    accelerator: isMac ? 'Cmd+,' : 'Ctrl+,',
+    click: () => createSettingsWindow(),
+  };
+
+  const template = [
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        settingsItem,
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    }] : []),
+    {
+      label: 'File',
+      submenu: [
+        ...(isMac ? [] : [settingsItem, { type: 'separator' }]),
+        isMac ? { role: 'close' } : { role: 'quit' },
+      ],
+    },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' },
+  ];
+
+  return Menu.buildFromTemplate(template);
 }
 
 function createMainWindow() {
@@ -164,6 +211,7 @@ function createSettingsWindow() {
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(buildAppMenu());
   createMainWindow();
 
   const playlist = loadPlaylist();
@@ -249,6 +297,74 @@ ipcMain.handle('select-videos', async () => {
     ],
   });
   return result.canceled ? [] : result.filePaths;
+});
+
+ipcMain.handle('export-config', async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const result = await dialog.showSaveDialog(settingsWindow || mainWindow, {
+    title: 'Export SimplePlayer config',
+    defaultPath: `simpleplayer-config-${today}.json`,
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (result.canceled || !result.filePath) return false;
+  const data = {
+    exportedAt: new Date().toISOString(),
+    version: app.getVersion(),
+    settings: loadSettings(),
+    playlist: loadPlaylist(),
+  };
+  try {
+    fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2));
+    return true;
+  } catch (e) {
+    console.error('Export failed:', e);
+    dialog.showErrorBox('Export failed', String(e.message || e));
+    return false;
+  }
+});
+
+ipcMain.handle('import-config', async () => {
+  const result = await dialog.showOpenDialog(settingsWindow || mainWindow, {
+    title: 'Import SimplePlayer config',
+    properties: ['openFile'],
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (result.canceled || !result.filePaths.length) return false;
+  try {
+    const raw = JSON.parse(fs.readFileSync(result.filePaths[0], 'utf-8'));
+    if (raw.settings && typeof raw.settings === 'object') {
+      const merged = {
+        ...defaultSettings,
+        ...raw.settings,
+        webserver: { ...defaultSettings.webserver, ...(raw.settings.webserver || {}) },
+        menu: { ...defaultSettings.menu, ...(raw.settings.menu || {}) },
+        secretButton: { ...defaultSettings.secretButton, ...(raw.settings.secretButton || {}) },
+      };
+      saveSettings(merged);
+    }
+    if (Array.isArray(raw.playlist)) {
+      const cleaned = raw.playlist.map(normalizeItem).filter(i => i && i.path);
+      savePlaylist(cleaned);
+    }
+
+    // Apply runtime side-effects
+    const s = loadSettings();
+    applyAutostart(s.autostart);
+    if (s.webserver && s.webserver.enabled && !webServerInstance) startWebServer(s.webserver.port || 3000);
+    if ((!s.webserver || !s.webserver.enabled) && webServerInstance) stopWebServer();
+
+    // Notify open windows
+    const list = loadPlaylist();
+    if (mainWindow) {
+      mainWindow.webContents.send('settings-updated', s);
+      mainWindow.webContents.send('playlist-updated', list);
+    }
+    return true;
+  } catch (e) {
+    console.error('Import failed:', e);
+    dialog.showErrorBox('Import failed', 'Could not parse the configuration file.');
+    return false;
+  }
 });
 
 ipcMain.handle('select-icon', async () => {

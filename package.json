@@ -1,6 +1,6 @@
 {
   "name": "simpleplayer",
-  "version": "2.1.1",
+  "version": "2.3.0",
   "description": "Simple fullscreen video playlist player",
   "main": "main.js",
   "scripts": {

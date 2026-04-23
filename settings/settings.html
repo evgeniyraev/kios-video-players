@@ -89,6 +89,13 @@
 
     .playlist-item:active { cursor: grabbing; }
     .playlist-item.dragging { opacity: 0.4; }
+    /* Prevent nested elements from hijacking the row's native drag */
+    .playlist-item img { -webkit-user-drag: none; user-drag: none; pointer-events: none; }
+    .playlist-item .icon-btn,
+    .playlist-item .key-btn,
+    .playlist-item .remove-btn,
+    .playlist-item .loop-toggle,
+    .playlist-item input { -webkit-user-drag: none; user-drag: none; }
 
     .item-index { color: #555; min-width: 22px; font-size: 12px; flex-shrink: 0; }
 
@@ -308,7 +315,24 @@
     button.secondary { background: #383838; color: #bbb; }
     button.secondary:hover { background: #444; }
 
-    .tab-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid #272727; }
+    /* Global save bar — one button to save every tab */
+    #global-footer {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 12px 20px;
+      background: #252525;
+      border-top: 1px solid #333;
+    }
+    #save-status {
+      font-size: 12px;
+      color: #4a9eff;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    #save-status.visible { opacity: 1; }
 
     /* Menu tab controls */
     .menu-scroll { overflow-y: auto; flex: 1; padding-right: 4px; }
@@ -386,7 +410,6 @@
     <div id="drop-zone">Drop video files here or click to browse</div>
     <div id="playlist"></div>
     <div class="buttons">
-      <button class="action primary" id="save-playlist-btn">Save Playlist</button>
       <button class="action secondary" id="clear-btn">Clear All</button>
     </div>
   </div>
@@ -413,9 +436,26 @@
         <span class="toggle-slider"></span>
       </label>
     </div>
-    <div class="tab-footer">
-      <div class="buttons">
-        <button class="action primary" id="save-general-btn">Save</button>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Hidden settings button</div>
+        <div class="setting-desc">Corner where the invisible 50×50 hold-area sits over the player. Hold for 10 seconds to open settings.</div>
+      </div>
+      <select class="control-select" id="secret-corner">
+        <option value="top-left">Top-left</option>
+        <option value="top-right">Top-right</option>
+        <option value="bottom-left">Bottom-left</option>
+        <option value="bottom-right">Bottom-right</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Backup &amp; restore</div>
+        <div class="setting-desc">Export current settings and playlist to a JSON file, or import one previously exported.</div>
+      </div>
+      <div class="buttons" style="padding-top:0;">
+        <button class="action secondary" id="export-btn">Export…</button>
+        <button class="action secondary" id="import-btn">Import…</button>
       </div>
     </div>
   </div>
@@ -492,11 +532,6 @@
         </div>
       </div>
     </div>
-    <div class="tab-footer">
-      <div class="buttons">
-        <button class="action primary" id="save-menu-btn">Save</button>
-      </div>
-    </div>
   </div>
 
   <!-- Web Server Tab -->
@@ -534,11 +569,12 @@
         </div>
       </div>
     </div>
-    <div class="tab-footer">
-      <div class="buttons">
-        <button class="action primary" id="save-webserver-btn">Save</button>
-      </div>
-    </div>
+  </div>
+
+  <!-- Global save bar — always visible, saves every tab -->
+  <div id="global-footer">
+    <span id="save-status">Saved</span>
+    <button class="action primary" id="save-all-btn">Save</button>
   </div>
 
   <script>
@@ -590,6 +626,8 @@
       const ws = settings.webserver || {};
       document.getElementById('webserver-toggle').checked = !!ws.enabled;
       document.getElementById('port-input').value = ws.port || 3000;
+      const sb = settings.secretButton || {};
+      document.getElementById('secret-corner').value = sb.corner || 'top-left';
       updateServerInfo();
       applyMenuToUI();
     }
@@ -715,23 +753,61 @@
     document.getElementById('menu-enabled-toggle').addEventListener('change', updateMenuDisabled);
     document.getElementById('menu-edge').addEventListener('change', updateOffsetDesc);
 
-    document.getElementById('save-menu-btn').addEventListener('click', async () => {
-      const prev = settings.menu || {};
+    // Collect every form value across every tab into the settings object,
+    // then persist settings + playlist together. One Save to rule them all.
+    async function saveAll() {
+      const btn = document.getElementById('save-all-btn');
+      const status = document.getElementById('save-status');
+      btn.disabled = true;
+
+      // General
+      settings.autoplay = document.getElementById('autoplay-toggle').checked;
+      settings.autostart = document.getElementById('autostart-toggle').checked;
+      settings.secretButton = {
+        ...(settings.secretButton || {}),
+        corner: document.getElementById('secret-corner').value,
+      };
+
+      // Menu — preserve homeStyle/homeIcon/helperIcon (managed by pickers)
+      const prevMenu = settings.menu || {};
       settings.menu = {
         enabled: document.getElementById('menu-enabled-toggle').checked,
         edge: document.getElementById('menu-edge').value,
         offset: parseInt(document.getElementById('menu-offset').value) || 0,
-        homeStyle: prev.homeStyle || 'house',
-        homeIcon: prev.homeIcon || '',
+        homeStyle: prevMenu.homeStyle || 'house',
+        homeIcon: prevMenu.homeIcon || '',
         homeIndex: parseInt(document.getElementById('home-index').value) || 0,
         showHelper: document.getElementById('helper-toggle').checked,
-        helperIcon: prev.helperIcon || '',
+        helperIcon: prevMenu.helperIcon || '',
       };
-      await window.api.saveSettings(settings);
-      renderPlaylist();
-      const btn = document.getElementById('save-menu-btn');
-      btn.textContent = 'Saved!';
-      setTimeout(() => { btn.textContent = 'Save'; }, 1500);
+
+      // Web server
+      settings.webserver = {
+        enabled: document.getElementById('webserver-toggle').checked,
+        port: parseInt(document.getElementById('port-input').value) || 3000,
+      };
+
+      try {
+        await Promise.all([
+          window.api.saveSettings(settings),
+          window.api.savePlaylist(playlist),
+        ]);
+        status.classList.add('visible');
+        setTimeout(() => status.classList.remove('visible'), 1500);
+        renderPlaylist();
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('save-all-btn').addEventListener('click', saveAll);
+
+    // Cmd/Ctrl+S anywhere in the settings window also saves.
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        saveAll();
+      }
     });
 
     document.getElementById('home-index').addEventListener('change', () => {
@@ -756,7 +832,7 @@
 
       const port = parseInt(document.getElementById('port-input').value) || 3000;
       const ips = await window.api.getNetworkIPs();
-      const hosts = [...ips, 'localhost'];
+      const hosts = ips.length ? ips : ['localhost'];
 
       const buildList = (pathname) => hosts.map(h => {
         const url = `http://${h}:${port}${pathname}`;
@@ -795,6 +871,31 @@
         keyListener = null;
       }
       listeningIndex = null;
+    }
+
+    // Capture the home-video object so we can re-bind homeIndex after the
+    // playlist is mutated (reorder / remove). Returns null if no home set.
+    function captureHomeVideo() {
+      const idx = settings.menu && settings.menu.homeIndex;
+      if (idx == null || idx < 0 || idx >= playlist.length) return null;
+      return playlist[idx];
+    }
+
+    // After playlist mutation, point homeIndex at the same video (or 0 if it
+    // was deleted). Updates in-memory state only — the unified Save button
+    // persists everything.
+    function rebindHomeIndex(prevHomeVideo) {
+      if (!settings.menu) return false;
+      let nextIdx;
+      if (!prevHomeVideo) {
+        nextIdx = 0;
+      } else {
+        const found = playlist.indexOf(prevHomeVideo);
+        nextIdx = found === -1 ? 0 : found;
+      }
+      if (nextIdx === settings.menu.homeIndex) return false;
+      settings.menu.homeIndex = nextIdx;
+      return true;
     }
 
     function renderPlaylist() {
@@ -869,17 +970,28 @@
           dragIndex = parseInt(el.dataset.index);
           el.classList.add('dragging');
           e.dataTransfer.effectAllowed = 'move';
+          // Required by Firefox; harmless in Chromium. Without it, drop events may not fire.
+          try { e.dataTransfer.setData('text/plain', String(dragIndex)); } catch (_) {}
         });
         el.addEventListener('dragend', () => { el.classList.remove('dragging'); dragIndex = null; });
-        el.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-        el.addEventListener('drop', (e) => {
+        el.addEventListener('dragover', (e) => {
+          if (dragIndex === null) return;
           e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+        el.addEventListener('drop', (e) => {
+          if (dragIndex === null) return;
+          e.preventDefault();
+          e.stopPropagation();
           const dropIdx = parseInt(el.dataset.index);
-          if (dragIndex !== null && dragIndex !== dropIdx) {
+          if (dragIndex !== dropIdx) {
+            const homeVideo = captureHomeVideo();
             const [moved] = playlist.splice(dragIndex, 1);
             playlist.splice(dropIdx, 0, moved);
+            rebindHomeIndex(homeVideo);
             renderPlaylist();
           }
+          dragIndex = null;
         });
       });
 
@@ -917,17 +1029,20 @@
       document.querySelectorAll('.remove-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
+          const homeVideo = captureHomeVideo();
           playlist.splice(parseInt(btn.dataset.index), 1);
+          rebindHomeIndex(homeVideo);
           cancelKeyListening();
           renderPlaylist();
         });
       });
 
-      // Keep home-index dropdown in sync
+      // Keep home-index dropdown in sync — read from canonical state, not the
+      // dropdown's stale value (which would be wrong after a reorder).
       const homeSel = document.getElementById('home-index');
       if (homeSel) {
-        const current = parseInt(homeSel.value);
-        refreshHomeIndexOptions(isNaN(current) ? 0 : current);
+        const current = (settings.menu && settings.menu.homeIndex != null) ? settings.menu.homeIndex : 0;
+        refreshHomeIndexOptions(current);
       }
     }
 
@@ -958,14 +1073,6 @@
       }
     });
 
-    // Save playlist
-    document.getElementById('save-playlist-btn').addEventListener('click', async () => {
-      await window.api.savePlaylist(playlist);
-      const btn = document.getElementById('save-playlist-btn');
-      btn.textContent = 'Saved!';
-      setTimeout(() => { btn.textContent = 'Save Playlist'; }, 1500);
-    });
-
     // Clear all
     document.getElementById('clear-btn').addEventListener('click', () => {
       playlist = [];
@@ -973,27 +1080,30 @@
       renderPlaylist();
     });
 
-    // Save general settings
-    document.getElementById('save-general-btn').addEventListener('click', async () => {
-      settings.autoplay = document.getElementById('autoplay-toggle').checked;
-      settings.autostart = document.getElementById('autostart-toggle').checked;
-      await window.api.saveSettings(settings);
-      const btn = document.getElementById('save-general-btn');
-      btn.textContent = 'Saved!';
-      setTimeout(() => { btn.textContent = 'Save'; }, 1500);
+    // Export / Import config
+    document.getElementById('export-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('export-btn');
+      const ok = await window.api.exportConfig();
+      if (ok) {
+        btn.textContent = 'Exported!';
+        setTimeout(() => { btn.textContent = 'Export…'; }, 1500);
+      }
     });
 
-    // Save web server settings
-    document.getElementById('save-webserver-btn').addEventListener('click', async () => {
-      settings.webserver = {
-        enabled: document.getElementById('webserver-toggle').checked,
-        port: parseInt(document.getElementById('port-input').value) || 3000,
-      };
-      await window.api.saveSettings(settings);
-      const btn = document.getElementById('save-webserver-btn');
-      btn.textContent = 'Saved!';
-      setTimeout(() => { btn.textContent = 'Save'; }, 1500);
+    document.getElementById('import-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('import-btn');
+      const ok = await window.api.importConfig();
+      if (!ok) return;
+      // Refresh in-memory state from disk and re-render every tab
+      const [list, cfg] = await Promise.all([window.api.getPlaylist(), window.api.getSettings()]);
+      playlist = list;
+      settings = cfg;
+      renderPlaylist();
+      applySettingsToUI();
+      btn.textContent = 'Imported!';
+      setTimeout(() => { btn.textContent = 'Import…'; }, 1500);
     });
+
   </script>
 </body>
 </html>

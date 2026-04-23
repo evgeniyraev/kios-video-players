@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('api', {
   getIsDev: () => ipcRenderer.invoke('get-is-dev'),
   selectVideos: () => ipcRenderer.invoke('select-videos'),
   selectIcon: () => ipcRenderer.invoke('select-icon'),
+  exportConfig: () => ipcRenderer.invoke('export-config'),
+  importConfig: () => ipcRenderer.invoke('import-config'),
   getNetworkIPs: () => ipcRenderer.invoke('get-network-ips'),
   generateQR: (text) => ipcRenderer.invoke('generate-qr', text),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),

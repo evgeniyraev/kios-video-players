@@ -596,6 +596,35 @@
       renderPlaylist();
     });
 
+    // Capture the home-video reference so we can re-bind homeIndex after the
+    // playlist is mutated (remove). Returns null if no home set.
+    function captureHomeVideo() {
+      const idx = settings.menu && settings.menu.homeIndex;
+      if (idx == null || idx < 0 || idx >= playlist.length) return null;
+      return playlist[idx];
+    }
+
+    // After playlist mutation, point homeIndex at the same video (or 0 if it
+    // was deleted). Persists via /api/settings so the player's OSM updates.
+    async function rebindHomeIndex(prevHomeVideo) {
+      if (!settings.menu) return false;
+      let nextIdx;
+      if (!prevHomeVideo) {
+        nextIdx = 0;
+      } else {
+        const found = playlist.indexOf(prevHomeVideo);
+        nextIdx = found === -1 ? 0 : found;
+      }
+      if (nextIdx === settings.menu.homeIndex) return false;
+      settings.menu.homeIndex = nextIdx;
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menu: settings.menu }),
+      });
+      return true;
+    }
+
     function refreshHomeIndexOptions(selected) {
       const sel = document.getElementById('home-index');
       if (!playlist.length) {
@@ -706,8 +735,10 @@
       });
 
       document.querySelectorAll('.remove-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
+          const homeVideo = captureHomeVideo();
           playlist.splice(parseInt(btn.dataset.index), 1);
+          await rebindHomeIndex(homeVideo);
           renderPlaylist();
         });
       });
@@ -742,7 +773,10 @@
         });
       });
 
-      refreshHomeIndexOptions(parseInt(document.getElementById('home-index').value) || 0);
+      // Sync from canonical state (settings.menu.homeIndex), not the dropdown's
+      // stale value, so reorders/removes update the dropdown correctly.
+      const current = (settings.menu && settings.menu.homeIndex != null) ? settings.menu.homeIndex : 0;
+      refreshHomeIndexOptions(current);
     }
 
     // Upload
