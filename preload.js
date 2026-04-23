@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('api', {
   openSettings: () => ipcRenderer.invoke('open-settings'),
   getIsDev: () => ipcRenderer.invoke('get-is-dev'),
   selectVideos: () => ipcRenderer.invoke('select-videos'),
+  selectIcon: () => ipcRenderer.invoke('select-icon'),
   getNetworkIPs: () => ipcRenderer.invoke('get-network-ips'),
   generateQR: (text) => ipcRenderer.invoke('generate-qr', text),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
@@ -16,6 +17,9 @@ contextBridge.exposeInMainWorld('api', {
   },
   onPlayVideoIndex: (callback) => {
     ipcRenderer.on('play-video-index', (event, index) => callback(index));
+  },
+  onSettingsUpdated: (callback) => {
+    ipcRenderer.on('settings-updated', (event, settings) => callback(settings));
   },
   getPathForFile: (file) => webUtils.getPathForFile(file),
 });

@@ -61,6 +61,20 @@
     .video-index { color: #444; min-width: 24px; font-size: 12px; flex-shrink: 0; }
     .video-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+    .video-icon {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a1a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .video-icon img { max-width: 28px; max-height: 28px; object-fit: contain; }
+
     .video-key {
       background: #252525;
       border: 1px solid #333;
@@ -121,6 +135,7 @@
       el.innerHTML = list.map(item => `
         <button class="video-btn${item.index === lastPlayed ? ' playing' : ''}" data-index="${item.index}">
           <span class="video-index">${item.index + 1}</span>
+          <span class="video-icon">${item.iconUrl ? `<img src="${item.iconUrl}" alt="">` : ''}</span>
           <span class="video-name">${item.name}</span>
           ${item.key ? `<span class="video-key">${item.key.length === 1 ? item.key.toUpperCase() : item.key}</span>` : ''}
           <span class="${item.index === lastPlayed ? 'playing-icon' : 'play-icon'}">${item.index === lastPlayed ? '▶' : '▶'}</span>

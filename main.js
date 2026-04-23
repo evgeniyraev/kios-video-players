@@ -13,13 +13,15 @@ const userDataPath = app.getPath('userData');
 const playlistPath = path.join(userDataPath, 'playlist.json');
 const settingsPath = path.join(userDataPath, 'settings.json');
 const uploadDir = path.join(userDataPath, 'uploads');
+const iconDir = path.join(userDataPath, 'icons');
 
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+if (!fs.existsSync(iconDir)) fs.mkdirSync(iconDir, { recursive: true });
 
 function normalizeItem(item) {
-  if (typeof item === 'string') return { path: item, key: '' };
+  if (typeof item === 'string') return { path: item, key: '', icon: '' };
   if (!item || typeof item !== 'object') return null;
-  return { path: item.path || '', key: item.key || '' };
+  return { path: item.path || '', key: item.key || '', icon: item.icon || '' };
 }
 
 function loadPlaylist() {
@@ -44,6 +46,16 @@ const defaultSettings = {
   autoplay: false,
   autostart: false,
   webserver: { enabled: false, port: 3000 },
+  menu: {
+    enabled: false,
+    edge: 'left',
+    offset: 100,
+    homeStyle: 'house',
+    homeIcon: '',
+    homeIndex: 0,
+    showHelper: true,
+    helperIcon: '',
+  },
 };
 
 function loadSettings() {
@@ -54,12 +66,13 @@ function loadSettings() {
         ...defaultSettings,
         ...saved,
         webserver: { ...defaultSettings.webserver, ...(saved.webserver || {}) },
+        menu: { ...defaultSettings.menu, ...(saved.menu || {}) },
       };
     }
   } catch (e) {
     console.error('Failed to load settings:', e);
   }
-  return { ...defaultSettings };
+  return { ...defaultSettings, menu: { ...defaultSettings.menu }, webserver: { ...defaultSettings.webserver } };
 }
 
 function saveSettings(settings) {
@@ -77,6 +90,7 @@ function startWebServer(port) {
     webServerInstance = createWebServer({
       port,
       uploadDir,
+      iconDir,
       loadPlaylist,
       savePlaylist,
       loadSettings,
@@ -190,6 +204,7 @@ ipcMain.handle('save-settings', (event, settings) => {
     stopWebServer();
   }
 
+  if (mainWindow) mainWindow.webContents.send('settings-updated', settings);
   return true;
 });
 
@@ -234,4 +249,26 @@ ipcMain.handle('select-videos', async () => {
     ],
   });
   return result.canceled ? [] : result.filePaths;
+});
+
+ipcMain.handle('select-icon', async () => {
+  const result = await dialog.showOpenDialog(settingsWindow || mainWindow, {
+    properties: ['openFile'],
+    filters: [
+      { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'] },
+    ],
+  });
+  if (result.canceled || !result.filePaths.length) return '';
+
+  const src = result.filePaths[0];
+  const ext = path.extname(src);
+  const base = path.basename(src, ext);
+  let dest = path.join(iconDir, `${base}${ext}`);
+  let counter = 1;
+  while (fs.existsSync(dest)) {
+    dest = path.join(iconDir, `${base}_${counter}${ext}`);
+    counter++;
+  }
+  fs.copyFileSync(src, dest);
+  return dest;
 });

@@ -98,6 +98,104 @@
 
     .key-input:focus { outline: none; border-color: #4a9eff; }
 
+    .icon-cell {
+      width: 36px;
+      height: 36px;
+      background: #252525;
+      border: 1px solid #333;
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      position: relative;
+      color: #555;
+      font-size: 16px;
+      overflow: hidden;
+    }
+
+    .icon-cell.has-icon { background: #1c1c1c; border-color: #444; }
+    .icon-cell img { max-width: 28px; max-height: 28px; object-fit: contain; }
+    .icon-cell input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+    .icon-clear-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #555;
+      color: #fff;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      font-size: 10px;
+      line-height: 1;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-cell.has-icon .icon-clear-btn { display: flex; }
+
+    /* Tabs (web) */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #1e1e1e;
+      margin-bottom: 18px;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: #666;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab-btn.active { color: #fff; border-bottom-color: #4a9eff; }
+    .tab-btn:hover:not(.active) { color: #aaa; }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .control-input,
+    .control-select {
+      background: #252525;
+      border: 1px solid #333;
+      color: #ccc;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+
+    .control-input { width: 90px; text-align: right; }
+    .control-select { min-width: 140px; }
+
+    .radio-group { display: flex; gap: 8px; }
+
+    .radio-pill {
+      background: #252525;
+      border: 1px solid #333;
+      color: #aaa;
+      border-radius: 4px;
+      padding: 6px 14px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .radio-pill.active { background: rgba(74,158,255,0.15); border-color: #4a9eff; color: #4a9eff; }
+
+    .menu-disabled .menu-controls { opacity: 0.4; pointer-events: none; }
+
     .remove-btn {
       background: none;
       border: none;
@@ -189,38 +287,132 @@
     <nav><a href="/remote">Remote</a></nav>
   </header>
 
-  <!-- Upload -->
-  <section>
-    <h2>Add Videos</h2>
-    <label class="upload-area" id="upload-area">
-      <input type="file" id="file-input" accept="video/mp4,video/webm,video/x-matroska,video/avi,video/quicktime,video/x-ms-wmv" multiple>
-      Tap to browse or drag video files here
-    </label>
-    <div class="progress" id="progress"></div>
-  </section>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="playlist">Playlist</button>
+    <button class="tab-btn" data-tab="playback">Playback</button>
+    <button class="tab-btn" data-tab="menu">On-Screen Menu</button>
+  </div>
 
-  <!-- Playlist -->
-  <section>
-    <h2>Playlist</h2>
-    <div id="playlist"></div>
-    <button class="save-btn" id="save-playlist-btn">Save Playlist</button>
-  </section>
-
-  <!-- Playback -->
-  <section>
-    <h2>Playback</h2>
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">Autoplay</div>
-        <div class="setting-desc">Auto-advance to next video when current one ends</div>
-      </div>
-      <label class="toggle">
-        <input type="checkbox" id="autoplay-toggle">
-        <span class="toggle-slider"></span>
+  <!-- Playlist tab -->
+  <div class="tab-pane active" id="pane-playlist">
+    <section>
+      <h2>Add Videos</h2>
+      <label class="upload-area" id="upload-area">
+        <input type="file" id="file-input" accept="video/mp4,video/webm,video/x-matroska,video/avi,video/quicktime,video/x-ms-wmv" multiple>
+        Tap to browse or drag video files here
       </label>
-    </div>
-    <button class="save-btn" id="save-settings-btn">Save Settings</button>
-  </section>
+      <div class="progress" id="progress"></div>
+    </section>
+    <section>
+      <h2>Playlist</h2>
+      <div id="playlist"></div>
+      <button class="save-btn" id="save-playlist-btn">Save Playlist</button>
+    </section>
+  </div>
+
+  <!-- Playback tab -->
+  <div class="tab-pane" id="pane-playback">
+    <section>
+      <h2>Playback</h2>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Autoplay</div>
+          <div class="setting-desc">Auto-advance to next video when current one ends</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="autoplay-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <button class="save-btn" id="save-settings-btn">Save Settings</button>
+    </section>
+  </div>
+
+  <!-- On-Screen Menu tab -->
+  <div class="tab-pane" id="pane-menu">
+    <section>
+      <h2>On-Screen Menu</h2>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Enable on-screen menu</div>
+          <div class="setting-desc">Show a hologram-style menu over the player.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="menu-enabled-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="menu-controls">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Edge</div>
+            <div class="setting-desc">Which side of the screen the menu sits on.</div>
+          </div>
+          <select class="control-select" id="menu-edge">
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+            <option value="up">Top</option>
+            <option value="down">Bottom</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Position</div>
+            <div class="setting-desc" id="offset-desc">Distance in pixels from the top edge.</div>
+          </div>
+          <input type="number" class="control-input" id="menu-offset" min="0" step="1" value="100">
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Home button style</div>
+            <div class="setting-desc">House icon or burger menu.</div>
+          </div>
+          <div class="radio-group" id="home-style-group">
+            <button class="radio-pill" data-value="house">House</button>
+            <button class="radio-pill" data-value="burger">Burger</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Home plays video</div>
+            <div class="setting-desc">Which playlist item plays when home is tapped.</div>
+          </div>
+          <select class="control-select" id="home-index"></select>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Custom home icon</div>
+            <div class="setting-desc">Optional image used in place of the house/burger style.</div>
+          </div>
+          <label class="icon-cell" id="home-icon-cell" title="Add icon">
+            <span id="home-icon-content">+</span>
+            <input type="file" accept="image/*" id="home-icon-input">
+          </label>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Show helper element</div>
+            <div class="setting-desc">Decorative hand/swipe indicator.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="helper-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Custom helper icon</div>
+            <div class="setting-desc">Optional image used in place of the default helper graphic.</div>
+          </div>
+          <label class="icon-cell" id="helper-icon-cell" title="Add icon">
+            <span id="helper-icon-content">+</span>
+            <input type="file" accept="image/*" id="helper-icon-input">
+          </label>
+        </div>
+      </div>
+      <button class="save-btn" id="save-menu-btn">Save Menu</button>
+    </section>
+  </div>
 
   <div class="toast" id="toast"></div>
 
@@ -243,22 +435,205 @@
       settings = await cfgRes.json();
       renderPlaylist();
       document.getElementById('autoplay-toggle').checked = !!settings.autoplay;
+      applyMenuToUI();
     }
+
+    function applyMenuToUI() {
+      const m = settings.menu || {};
+      document.getElementById('menu-enabled-toggle').checked = !!m.enabled;
+      document.getElementById('menu-edge').value = m.edge || 'left';
+      document.getElementById('menu-offset').value = m.offset != null ? m.offset : 100;
+      document.getElementById('helper-toggle').checked = m.showHelper !== false;
+      document.querySelectorAll('#home-style-group .radio-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.value === (m.homeStyle || 'house'));
+      });
+      refreshHomeIndexOptions(m.homeIndex != null ? m.homeIndex : 0);
+      renderMenuIconCell('home', m.homeIcon || '');
+      renderMenuIconCell('helper', m.helperIcon || '');
+      updateOffsetDesc();
+      updateMenuDisabled();
+    }
+
+    function menuIconUrl(absPath) {
+      if (!absPath) return '';
+      const base = absPath.split(/[/\\]/).pop();
+      return `/icons/${base}`;
+    }
+
+    function renderMenuIconCell(kind, absPath) {
+      const cell = document.getElementById(`${kind}-icon-cell`);
+      const content = document.getElementById(`${kind}-icon-content`);
+      const url = menuIconUrl(absPath);
+      cell.classList.toggle('has-icon', !!url);
+      cell.title = url ? 'Replace icon' : 'Add icon';
+      if (url) {
+        content.innerHTML = `<img src="${url}" alt=""><button class="icon-clear-btn" data-clear-menu="${kind}" title="Remove icon">&times;</button>`;
+      } else {
+        content.textContent = '+';
+      }
+    }
+
+    const HOME_ICON_SVGS = {
+      house: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="20,12 4,12 4,8 12,2 20,8 20,12"/><rect x="9.5" y="13" width="5" height="6"/></svg>',
+      burger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="7" x2="19" y2="7"/><line x1="5" y1="12" x2="19" y2="12"/><line x1="5" y1="17" x2="19" y2="17"/></svg>',
+    };
+
+    function homeIconHTML() {
+      const m = settings.menu || {};
+      const url = menuIconUrl(m.homeIcon || '');
+      if (url) return `<img src="${url}" alt="">`;
+      return HOME_ICON_SVGS[m.homeStyle === 'burger' ? 'burger' : 'house'];
+    }
+
+    document.getElementById('home-icon-input').addEventListener('change', async (e) => {
+      const input = e.target;
+      if (!input.files.length) return;
+      const fd = new FormData();
+      fd.append('icon', input.files[0]);
+      const res = await fetch('/api/upload-menu-icon/home', { method: 'POST', body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        settings.menu = settings.menu || {};
+        settings.menu.homeIcon = data.path;
+        renderMenuIconCell('home', data.path);
+        renderPlaylist();
+        showToast('Home icon updated');
+      }
+      input.value = '';
+    });
+
+    document.getElementById('helper-icon-input').addEventListener('change', async (e) => {
+      const input = e.target;
+      if (!input.files.length) return;
+      const fd = new FormData();
+      fd.append('icon', input.files[0]);
+      const res = await fetch('/api/upload-menu-icon/helper', { method: 'POST', body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        settings.menu = settings.menu || {};
+        settings.menu.helperIcon = data.path;
+        renderMenuIconCell('helper', data.path);
+        showToast('Helper icon updated');
+      }
+      input.value = '';
+    });
+
+    document.addEventListener('click', async (e) => {
+      const t = e.target;
+      if (t && t.dataset && t.dataset.clearMenu) {
+        e.preventDefault();
+        e.stopPropagation();
+        const kind = t.dataset.clearMenu;
+        await fetch(`/api/menu-icon/${kind}`, { method: 'DELETE' });
+        settings.menu = settings.menu || {};
+        settings.menu[kind === 'helper' ? 'helperIcon' : 'homeIcon'] = '';
+        renderMenuIconCell(kind, '');
+        renderPlaylist();
+      }
+    });
+
+    document.getElementById('home-index').addEventListener('change', () => {
+      settings.menu = settings.menu || {};
+      settings.menu.homeIndex = parseInt(document.getElementById('home-index').value) || 0;
+      renderPlaylist();
+    });
+
+    function refreshHomeIndexOptions(selected) {
+      const sel = document.getElementById('home-index');
+      if (!playlist.length) {
+        sel.innerHTML = '<option value="-1">No videos</option>';
+        return;
+      }
+      sel.innerHTML = playlist.map((item, i) => {
+        return `<option value="${i}">${i + 1}. ${item.name}</option>`;
+      }).join('');
+      sel.value = String(Math.min(selected, playlist.length - 1));
+    }
+
+    function updateOffsetDesc() {
+      const edge = document.getElementById('menu-edge').value;
+      const fromText = (edge === 'left' || edge === 'right') ? 'top' : 'left';
+      document.getElementById('offset-desc').textContent = `Distance in pixels from the ${fromText} edge.`;
+    }
+
+    function updateMenuDisabled() {
+      const enabled = document.getElementById('menu-enabled-toggle').checked;
+      document.getElementById('pane-menu').classList.toggle('menu-disabled', !enabled);
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('pane-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    document.getElementById('menu-enabled-toggle').addEventListener('change', updateMenuDisabled);
+    document.getElementById('menu-edge').addEventListener('change', updateOffsetDesc);
+
+    document.querySelectorAll('#home-style-group .radio-pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('#home-style-group .radio-pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+      });
+    });
+
+    document.getElementById('save-menu-btn').addEventListener('click', async () => {
+      const homeStyleEl = document.querySelector('#home-style-group .radio-pill.active');
+      const prev = settings.menu || {};
+      const menu = {
+        enabled: document.getElementById('menu-enabled-toggle').checked,
+        edge: document.getElementById('menu-edge').value,
+        offset: parseInt(document.getElementById('menu-offset').value) || 0,
+        homeStyle: homeStyleEl ? homeStyleEl.dataset.value : 'house',
+        homeIcon: prev.homeIcon || '',
+        homeIndex: parseInt(document.getElementById('home-index').value) || 0,
+        showHelper: document.getElementById('helper-toggle').checked,
+        helperIcon: prev.helperIcon || '',
+      };
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menu }),
+      });
+      settings.menu = menu;
+      renderPlaylist();
+      showToast('Menu saved');
+    });
 
     function renderPlaylist() {
       const el = document.getElementById('playlist');
       if (playlist.length === 0) {
         el.innerHTML = '<div class="empty">No videos yet. Upload some above.</div>';
+        refreshHomeIndexOptions(0);
         return;
       }
-      el.innerHTML = playlist.map((item, i) => `
+      const homeIdx = (settings.menu && settings.menu.homeIndex != null) ? settings.menu.homeIndex : -1;
+      el.innerHTML = playlist.map((item, i) => {
+        const isHome = (i === homeIdx);
+        let iconCell;
+        if (isHome) {
+          iconCell = `<div class="icon-cell has-icon" title="Home icon — change in On-Screen Menu tab" style="cursor:default;">${homeIconHTML()}</div>`;
+        } else {
+          const iconInner = item.iconUrl
+            ? `<img src="${item.iconUrl}" alt=""><button class="icon-clear-btn" data-clear="${i}" title="Remove icon">&times;</button>`
+            : '+';
+          iconCell = `<label class="icon-cell ${item.iconUrl ? 'has-icon' : ''}" data-icon="${i}" title="${item.iconUrl ? 'Replace icon' : 'Add icon'}">
+            ${iconInner}
+            <input type="file" accept="image/*" data-icon-input="${i}">
+          </label>`;
+        }
+        return `
         <div class="playlist-item" data-index="${i}">
           <span class="item-index">${i + 1}.</span>
+          ${iconCell}
           <span class="item-name" title="${item.path}">${item.name}</span>
           <input class="key-input" placeholder="Key" value="${item.key || ''}" data-index="${i}" maxlength="10">
           <button class="remove-btn" data-index="${i}">&times;</button>
         </div>
-      `).join('');
+      `;}).join('');
 
       document.querySelectorAll('.key-input').forEach(input => {
         input.addEventListener('keydown', (e) => {
@@ -276,6 +651,38 @@
           renderPlaylist();
         });
       });
+
+      document.querySelectorAll('[data-icon-input]').forEach(input => {
+        input.addEventListener('change', async () => {
+          if (!input.files.length) return;
+          const idx = parseInt(input.dataset.iconInput);
+          const fd = new FormData();
+          fd.append('icon', input.files[0]);
+          const res = await fetch(`/api/upload-icon/${idx}`, { method: 'POST', body: fd });
+          if (res.ok) {
+            const data = await res.json();
+            playlist[idx].icon = playlist[idx].icon || '';
+            playlist[idx].iconUrl = data.iconUrl;
+            renderPlaylist();
+            showToast('Icon updated');
+          }
+          input.value = '';
+        });
+      });
+
+      document.querySelectorAll('.icon-clear-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.clear);
+          await fetch(`/api/icon/${idx}`, { method: 'DELETE' });
+          playlist[idx].icon = '';
+          playlist[idx].iconUrl = '';
+          renderPlaylist();
+        });
+      });
+
+      refreshHomeIndexOptions(parseInt(document.getElementById('home-index').value) || 0);
     }
 
     // Upload
@@ -313,7 +720,7 @@
 
     // Save playlist
     document.getElementById('save-playlist-btn').addEventListener('click', async () => {
-      const toSave = playlist.map(({ path, key }) => ({ path, key }));
+      const toSave = playlist.map(({ path, key, icon }) => ({ path, key, icon: icon || '' }));
       await fetch('/api/playlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

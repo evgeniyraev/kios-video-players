@@ -118,6 +118,48 @@
     .key-btn.listening { background: rgba(74,158,255,0.1); border-color: #4a9eff; color: #4a9eff; }
     .key-btn.has-key { background: rgba(80,180,80,0.1); border-color: #4a4; color: #6c6; }
 
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      background: #333;
+      border: 1px solid #444;
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      position: relative;
+      color: #777;
+      font-size: 16px;
+    }
+
+    .icon-btn:hover { border-color: #666; }
+    .icon-btn.has-icon { background: #1f1f1f; border-color: #555; }
+    .icon-btn img { max-width: 28px; max-height: 28px; object-fit: contain; }
+
+    .icon-clear {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #555;
+      color: #fff;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      font-size: 10px;
+      line-height: 1;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+    }
+
+    .icon-btn.has-icon:hover .icon-clear { display: flex; }
+
     .remove-btn {
       background: none;
       border: none;
@@ -252,12 +294,75 @@
     button.secondary:hover { background: #444; }
 
     .tab-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid #272727; }
+
+    /* Menu tab controls */
+    .menu-scroll { overflow-y: auto; flex: 1; padding-right: 4px; }
+
+    .control-input,
+    .control-select {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #ccc;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+
+    .control-input { width: 90px; text-align: right; }
+    .control-select { min-width: 140px; }
+
+    .radio-group { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .radio-pill {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #aaa;
+      border-radius: 4px;
+      padding: 6px 14px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .radio-pill:hover { border-color: #666; }
+    .radio-pill.active { background: rgba(74,158,255,0.15); border-color: #4a9eff; color: #4a9eff; }
+    .radio-pill .icon-glyph { display: inline-flex; vertical-align: middle; margin-right: 6px; }
+    .radio-pill .icon-glyph svg { width: 14px; height: 14px; }
+
+    .menu-disabled .menu-controls { opacity: 0.4; pointer-events: none; }
+
+    /* Icon picker (built-in tiles + custom slot) */
+    .icon-picker { display: flex; gap: 8px; flex-shrink: 0; }
+    .icon-tile {
+      width: 44px; height: 44px;
+      background: #2a2a2a; border: 1px solid #444;
+      border-radius: 6px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #aaa; padding: 0; position: relative;
+      font-size: 18px; line-height: 1;
+    }
+    .icon-tile:hover { border-color: #666; color: #ddd; }
+    .icon-tile.active {
+      background: rgba(74,158,255,0.15);
+      border-color: #4a9eff;
+      color: #4a9eff;
+    }
+    .icon-tile svg { width: 22px; height: 22px; }
+    .icon-tile img { max-width: 32px; max-height: 32px; object-fit: contain; }
+    .custom-clear {
+      position: absolute; top: -6px; right: -6px;
+      background: #555; color: #fff; width: 14px; height: 14px;
+      border-radius: 50%; font-size: 10px; line-height: 1;
+      display: none; align-items: center; justify-content: center;
+      border: none; padding: 0; cursor: pointer;
+    }
+    .icon-tile:hover .custom-clear { display: flex; }
   </style>
 </head>
 <body>
   <div class="tabs">
     <button class="tab active" data-tab="playlist">Playlist</button>
     <button class="tab" data-tab="general">General</button>
+    <button class="tab" data-tab="menu">On-Screen Menu</button>
     <button class="tab" data-tab="webserver">Web Server</button>
   </div>
 
@@ -296,6 +401,85 @@
     <div class="tab-footer">
       <div class="buttons">
         <button class="action primary" id="save-general-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- On-Screen Menu Tab -->
+  <div id="tab-menu" class="tab-content">
+    <div class="menu-scroll">
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-label">Enable on-screen menu</div>
+          <div class="setting-desc">Show a hologram-style menu over the player for quick switching between videos.</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="menu-enabled-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="menu-controls">
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Edge</div>
+            <div class="setting-desc">Which side of the screen the menu sits on.</div>
+          </div>
+          <select class="control-select" id="menu-edge">
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+            <option value="up">Top</option>
+            <option value="down">Bottom</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Position</div>
+            <div class="setting-desc" id="offset-desc">Distance in pixels from the top edge.</div>
+          </div>
+          <input type="number" class="control-input" id="menu-offset" min="0" step="1" value="100">
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Home icon</div>
+            <div class="setting-desc">Pick a built-in icon or upload a custom one.</div>
+          </div>
+          <div class="icon-picker" id="home-icon-picker"></div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Home plays video</div>
+            <div class="setting-desc">Which playlist item plays when the home button is tapped.</div>
+          </div>
+          <select class="control-select" id="home-index"></select>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Show helper element</div>
+            <div class="setting-desc">Decorative hand/swipe indicator at the end of the menu.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="helper-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-label">Custom helper icon</div>
+            <div class="setting-desc">Optional image used in place of the default helper graphic.</div>
+          </div>
+          <button class="icon-btn" id="helper-icon-btn" title="Add icon">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="tab-footer">
+      <div class="buttons">
+        <button class="action primary" id="save-menu-btn">Save</button>
       </div>
     </div>
   </div>
@@ -392,6 +576,172 @@
       document.getElementById('webserver-toggle').checked = !!ws.enabled;
       document.getElementById('port-input').value = ws.port || 3000;
       updateServerInfo();
+      applyMenuToUI();
+    }
+
+    const BUILTIN_ICONS = {
+      house: '<svg viewBox="0 0 10.3 13.54" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3"><polygon points="9.65,12.89 0.65,12.89 0.65,5.77 5.15,0.65 9.65,5.77 9.65,12.89"/><rect x="3.68" y="7.99" width="3.1" height="4.46"/></svg>',
+      burger: '<svg viewBox="0 0 21.67 16.51" fill="currentColor"><path d="M21.67,2.12c-.12.3-.2.64-.38.9-.39.58-.98.79-1.66.79-4.17,0-8.34,0-12.5,0-.14,0-.28-.01-.42-.03-.91-.12-1.63-.94-1.63-1.87,0-.93.71-1.76,1.63-1.87.13-.02.27-.03.4-.03C11.29,0,15.47,0,19.65,0c.83,0,1.46.34,1.83,1.09.09.19.13.4.19.6v.42Z"/><path d="M21.67,8.47c-.12.3-.2.64-.38.9-.39.58-.98.79-1.66.79-4.17,0-8.34,0-12.5,0-.14,0-.28-.01-.42-.03-.91-.12-1.63-.94-1.63-1.87s.71-1.76,1.63-1.87c.13-.02.27-.03.4-.03,4.18,0,8.36,0,12.55,0,.83,0,1.46.34,1.83,1.09.09.19.13.4.19.6v.42Z"/><path d="M21.67,14.82c-.12.3-.2.64-.38.9-.39.58-.98.79-1.66.79-4.17,0-8.34,0-12.5,0-.14,0-.28-.01-.42-.03-.91-.12-1.63-.94-1.63-1.87s.71-1.76,1.63-1.87c.13-.02.27-.03.4-.03,4.18,0,8.36,0,12.55,0,.83,0,1.46.34,1.83,1.09.09.19.13.4.19.6v.42Z"/><path d="M1.87,3.81C.82,3.78-.02,2.91,0,1.88.03.82.92-.04,1.95,0c1.06.04,1.9.92,1.86,1.94-.04,1.05-.91,1.9-1.93,1.87Z"/><path d="M0,8.24c.02-1.04.89-1.9,1.92-1.88,1.05.01,1.92.9,1.89,1.93-.03,1.05-.9,1.9-1.93,1.87C.83,10.13-.02,9.26,0,8.24Z"/><path d="M1.89,12.7c1.03,0,1.9.85,1.91,1.89.01,1.04-.86,1.92-1.9,1.92-1.04,0-1.9-.86-1.9-1.9,0-1.03.85-1.9,1.89-1.91Z"/></svg>',
+      helper: '<svg viewBox="0 0 21.18 25.31" fill="currentColor"><path d="M5.79,14.37c0-.31,0-.61,0-.92,0-2.8,0-5.61,0-8.41,0-1.24.84-2.23,2.06-2.44,1.27-.21,2.48.64,2.7,1.91.03.19.05.39.05.59,0,.72,0,1.44,0,2.16,0,.05,0,.11,0,.18.67-.32,1.35-.38,2.03-.11.68.27,1.11.79,1.36,1.46,1.35-.78,3.01-.23,3.55,1.27.04-.02.09-.04.13-.06,1.59-.85,3.48.23,3.5,2.04.02,2.18,0,4.36-.03,6.54-.01.99-.16,1.98-.48,2.93-.55,1.68-1.7,2.76-3.37,3.31-1.02.33-2.06.45-3.12.48-1.16.03-2.31,0-3.45-.26-.98-.22-1.84-.65-2.65-1.24-.77-.58-1.4-1.29-2.08-1.96-1.75-1.72-3.47-3.47-5.23-5.17-1.15-1.11-.86-2.62-.06-3.57.88-1.02,2.61-1.11,3.58-.17.44.42.86.86,1.29,1.29.06.06.11.13.16.19l.05-.03ZM7.09,17.49c-.07-.06-.1-.09-.14-.13-1.11-1.1-2.22-2.21-3.34-3.31-.36-.36-.93-.46-1.42-.26-.48.21-.82.71-.81,1.21,0,.39.22.67.48.93,2.1,2.08,4.2,4.16,6.29,6.25.72.71,1.56,1.21,2.53,1.49,1.03.29,2.08.36,3.14.35.97,0,1.92-.09,2.86-.36,1.54-.44,2.55-1.39,2.93-2.97.18-.77.25-1.55.26-2.34.01-1.79.01-3.58.01-5.37,0-.27,0-.53,0-.8-.04-.71-.62-1.16-1.32-1.02-.57.11-.92.56-.92,1.19,0,.86,0,1.73,0,2.59,0,.36-.28.64-.63.64-.35,0-.64-.29-.64-.64,0-.47,0-.95,0-1.42,0-.79,0-1.57,0-2.36,0-.47-.18-.83-.61-1.05-.7-.35-1.43-.03-1.6.71-.03.13-.04.27-.04.41,0,.98,0,1.96,0,2.94,0,.37-.28.65-.65.65-.35,0-.63-.29-.63-.65,0-.2,0-.4,0-.59,0-1.27,0-2.53,0-3.8,0-.62-.39-1.02-1.03-1.09-.54-.06-1.03.3-1.16.86-.03.12-.03.24-.03.37,0,1.08,0,2.16,0,3.25,0,.31-.25.59-.56.63-.32.04-.63-.16-.7-.48-.03-.13-.03-.26-.03-.4,0-1.76,0-3.52,0-5.28,0-.81,0-1.61,0-2.42,0-.46-.19-.83-.62-1.03-.43-.2-.84-.12-1.21.18-.3.25-.4.59-.4.98,0,3.48,0,6.97,0,10.45,0,.54,0,1.09,0,1.68Z"/><path d="M12.98,6.25c-.18-.11-.36-.24-.55-.33-.19-.08-.4-.12-.59-.17.01-.34.06-.69.04-1.04-.12-2.25-2.34-3.88-4.52-3.33-1.84.46-3.01,2.12-2.8,4,.04.33.16.65.25.97.01.06.04.11.04.17,0,.66,0,1.31,0,1.97,0,.02,0,.04-.01.09-.58-.53-.99-1.14-1.26-1.85-.49-1.3-.45-2.6.13-3.86C4.86.38,7.82-.71,10.33.48c2.49,1.18,3.26,3.91,2.66,5.77Z"/></svg>',
+    };
+
+    function applyMenuToUI() {
+      const m = settings.menu || {};
+      document.getElementById('menu-enabled-toggle').checked = !!m.enabled;
+      document.getElementById('menu-edge').value = m.edge || 'left';
+      document.getElementById('menu-offset').value = m.offset != null ? m.offset : 100;
+      document.getElementById('helper-toggle').checked = m.showHelper !== false;
+      refreshHomeIndexOptions(m.homeIndex != null ? m.homeIndex : 0);
+      renderHomeIconPicker();
+      renderHelperIconPicker();
+      updateOffsetDesc();
+      updateMenuDisabled();
+    }
+
+    function renderHomeIconPicker() {
+      const m = settings.menu || {};
+      const isCustom = !!m.homeIcon;
+      const activeStyle = isCustom ? 'custom' : (m.homeStyle === 'burger' ? 'burger' : 'house');
+      const customInner = m.homeIcon
+        ? `<img src="file://${m.homeIcon}" alt=""><button class="custom-clear" data-clear-home title="Remove custom icon">&times;</button>`
+        : '+';
+      document.getElementById('home-icon-picker').innerHTML = `
+        <button class="icon-tile${activeStyle === 'house' ? ' active' : ''}" data-style="house" title="House">${BUILTIN_ICONS.house}</button>
+        <button class="icon-tile${activeStyle === 'burger' ? ' active' : ''}" data-style="burger" title="Burger">${BUILTIN_ICONS.burger}</button>
+        <button class="icon-tile${activeStyle === 'custom' ? ' active' : ''}" data-style="custom" title="${m.homeIcon ? 'Replace custom icon' : 'Upload custom icon'}">${customInner}</button>
+      `;
+    }
+
+    function renderHelperIconPicker() {
+      const m = settings.menu || {};
+      const isCustom = !!m.helperIcon;
+      const customInner = m.helperIcon
+        ? `<img src="file://${m.helperIcon}" alt=""><button class="custom-clear" data-clear-helper title="Remove custom icon">&times;</button>`
+        : '+';
+      document.getElementById('helper-icon-picker').innerHTML = `
+        <button class="icon-tile${!isCustom ? ' active' : ''}" data-helper="default" title="Default helper">${BUILTIN_ICONS.helper}</button>
+        <button class="icon-tile${isCustom ? ' active' : ''}" data-helper="custom" title="${m.helperIcon ? 'Replace custom icon' : 'Upload custom icon'}">${customInner}</button>
+      `;
+    }
+
+    document.getElementById('home-icon-picker').addEventListener('click', async (e) => {
+      const target = e.target;
+      if (target && target.dataset && 'clearHome' in target.dataset) {
+        e.preventDefault();
+        e.stopPropagation();
+        settings.menu = settings.menu || {};
+        settings.menu.homeIcon = '';
+        renderHomeIconPicker();
+        renderPlaylist();
+        return;
+      }
+      const tile = target.closest && target.closest('.icon-tile');
+      if (!tile) return;
+      const style = tile.dataset.style;
+      settings.menu = settings.menu || {};
+      if (style === 'custom') {
+        const iconPath = await window.api.selectIcon();
+        if (iconPath) settings.menu.homeIcon = iconPath;
+      } else {
+        settings.menu.homeStyle = style;
+        settings.menu.homeIcon = '';
+      }
+      renderHomeIconPicker();
+      renderPlaylist();
+    });
+
+    document.getElementById('helper-icon-picker').addEventListener('click', async (e) => {
+      const target = e.target;
+      if (target && target.dataset && 'clearHelper' in target.dataset) {
+        e.preventDefault();
+        e.stopPropagation();
+        settings.menu = settings.menu || {};
+        settings.menu.helperIcon = '';
+        renderHelperIconPicker();
+        return;
+      }
+      const tile = target.closest && target.closest('.icon-tile');
+      if (!tile) return;
+      const kind = tile.dataset.helper;
+      settings.menu = settings.menu || {};
+      if (kind === 'custom') {
+        const iconPath = await window.api.selectIcon();
+        if (iconPath) settings.menu.helperIcon = iconPath;
+      } else {
+        settings.menu.helperIcon = '';
+      }
+      renderHelperIconPicker();
+    });
+
+    function refreshHomeIndexOptions(selected) {
+      const sel = document.getElementById('home-index');
+      if (!playlist.length) {
+        sel.innerHTML = '<option value="-1">No videos</option>';
+        return;
+      }
+      sel.innerHTML = playlist.map((item, i) => {
+        const name = (item.path || '').split(/[/\\]/).pop();
+        return `<option value="${i}">${i + 1}. ${name}</option>`;
+      }).join('');
+      sel.value = String(Math.min(selected, playlist.length - 1));
+    }
+
+    function updateOffsetDesc() {
+      const edge = document.getElementById('menu-edge').value;
+      const fromText = (edge === 'left' || edge === 'right') ? 'top' : 'left';
+      document.getElementById('offset-desc').textContent = `Distance in pixels from the ${fromText} edge.`;
+    }
+
+    function updateMenuDisabled() {
+      const enabled = document.getElementById('menu-enabled-toggle').checked;
+      document.getElementById('tab-menu').classList.toggle('menu-disabled', !enabled);
+    }
+
+    document.getElementById('menu-enabled-toggle').addEventListener('change', updateMenuDisabled);
+    document.getElementById('menu-edge').addEventListener('change', updateOffsetDesc);
+
+    document.querySelectorAll('#home-style-group .radio-pill').forEach(p => {
+      p.addEventListener('click', () => {
+        document.querySelectorAll('#home-style-group .radio-pill').forEach(x => x.classList.remove('active'));
+        p.classList.add('active');
+      });
+    });
+
+    document.getElementById('save-menu-btn').addEventListener('click', async () => {
+      const homeStyleEl = document.querySelector('#home-style-group .radio-pill.active');
+      const prev = settings.menu || {};
+      settings.menu = {
+        enabled: document.getElementById('menu-enabled-toggle').checked,
+        edge: document.getElementById('menu-edge').value,
+        offset: parseInt(document.getElementById('menu-offset').value) || 0,
+        homeStyle: homeStyleEl ? homeStyleEl.dataset.value : 'house',
+        homeIcon: prev.homeIcon || '',
+        homeIndex: parseInt(document.getElementById('home-index').value) || 0,
+        showHelper: document.getElementById('helper-toggle').checked,
+        helperIcon: prev.helperIcon || '',
+      };
+      await window.api.saveSettings(settings);
+      renderPlaylist();
+      const btn = document.getElementById('save-menu-btn');
+      btn.textContent = 'Saved!';
+      setTimeout(() => { btn.textContent = 'Save'; }, 1500);
+    });
+
+    document.getElementById('home-index').addEventListener('change', () => {
+      settings.menu = settings.menu || {};
+      settings.menu.homeIndex = parseInt(document.getElementById('home-index').value) || 0;
+      renderPlaylist();
+    });
+
+    const HOME_ICON_SVGS = {
+      house: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="20,12 4,12 4,8 12,2 20,8 20,12"/><rect x="9.5" y="13" width="5" height="6"/></svg>',
+      burger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="7" x2="19" y2="7"/><line x1="5" y1="12" x2="19" y2="12"/><line x1="5" y1="17" x2="19" y2="17"/></svg>',
+    };
+
+    function homeIconHTML() {
+      const m = settings.menu || {};
+      if (m.homeIcon) return `<img src="file://${m.homeIcon}" alt="">`;
+      return HOME_ICON_SVGS[m.homeStyle === 'burger' ? 'burger' : 'house'];
     }
 
     async function updateServerInfo() {
@@ -451,17 +801,52 @@
         return;
       }
 
+      const homeIdx = (settings.menu && settings.menu.homeIndex != null) ? settings.menu.homeIndex : -1;
       playlistEl.innerHTML = playlist.map((item, i) => {
         const name = (item.path || '').split(/[/\\]/).pop();
         const hasKey = !!item.key;
         const keyLabel = hasKey ? formatKey(item.key) : 'No key';
+        const isHome = (i === homeIdx);
+        let iconButton;
+        if (isHome) {
+          iconButton = `<button class="icon-btn has-icon" disabled title="Home icon — change in On-Screen Menu tab">${homeIconHTML()}</button>`;
+        } else {
+          const hasIcon = !!item.icon;
+          const iconHTML = hasIcon
+            ? `<img src="file://${item.icon}" alt=""><span class="icon-clear" data-clear="${i}" title="Remove icon">&times;</span>`
+            : '+';
+          iconButton = `<button class="icon-btn ${hasIcon ? 'has-icon' : ''}" data-icon="${i}" title="${hasIcon ? 'Replace icon' : 'Add icon'}">${iconHTML}</button>`;
+        }
         return `<div class="playlist-item" draggable="true" data-index="${i}">
           <span class="item-index">${i + 1}.</span>
+          ${iconButton}
           <span class="item-name" title="${item.path}">${name}</span>
           <button class="key-btn ${hasKey ? 'has-key' : ''}" data-index="${i}">${keyLabel}</button>
           <button class="remove-btn" data-index="${i}">&times;</button>
         </div>`;
       }).join('');
+
+      // Icon pick / clear
+      document.querySelectorAll('.icon-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.icon);
+          const iconPath = await window.api.selectIcon();
+          if (iconPath) {
+            playlist[idx].icon = iconPath;
+            renderPlaylist();
+          }
+        });
+      });
+      document.querySelectorAll('.icon-clear').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const idx = parseInt(el.dataset.clear);
+          playlist[idx].icon = '';
+          renderPlaylist();
+        });
+      });
 
       // Drag reorder
       document.querySelectorAll('.playlist-item').forEach(el => {
@@ -522,6 +907,13 @@
           renderPlaylist();
         });
       });
+
+      // Keep home-index dropdown in sync
+      const homeSel = document.getElementById('home-index');
+      if (homeSel) {
+        const current = parseInt(homeSel.value);
+        refreshHomeIndexOptions(isNaN(current) ? 0 : current);
+      }
     }
 
     // Drop zone
