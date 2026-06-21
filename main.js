@@ -57,6 +57,9 @@ const defaultSettings = {
     helperIcon: '',
   },
   secretButton: { corner: 'top-left' },
+  playback: { playCount: 1 },
+  // autoInstallScope: 'none' (manual only) | 'patch' | 'minor' | 'major'
+  updates: { autoCheck: true, autoInstallScope: 'none' },
 };
 
 function loadSettings() {
@@ -69,6 +72,8 @@ function loadSettings() {
         webserver: { ...defaultSettings.webserver, ...(saved.webserver || {}) },
         menu: { ...defaultSettings.menu, ...(saved.menu || {}) },
         secretButton: { ...defaultSettings.secretButton, ...(saved.secretButton || {}) },
+        playback: { ...defaultSettings.playback, ...(saved.playback || {}) },
+        updates: { ...defaultSettings.updates, ...(saved.updates || {}) },
       };
     }
   } catch (e) {
@@ -79,6 +84,8 @@ function loadSettings() {
     menu: { ...defaultSettings.menu },
     webserver: { ...defaultSettings.webserver },
     secretButton: { ...defaultSettings.secretButton },
+    playback: { ...defaultSettings.playback },
+    updates: { ...defaultSettings.updates },
   };
 }
 
@@ -88,6 +95,112 @@ function saveSettings(settings) {
 
 function applyAutostart(enabled) {
   app.setLoginItemSettings({ openAtLogin: !!enabled });
+}
+
+// ─── Auto-updater (GitHub Releases via electron-updater) ────────────────────
+// electron-updater only works in a packaged build; in dev mode we still
+// expose the IPC surface so the settings UI can render its "dev mode"
+// fallback, but checks/downloads are no-ops.
+let autoUpdater = null;
+try {
+  autoUpdater = require('electron-updater').autoUpdater;
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+} catch (e) {
+  console.warn('electron-updater unavailable:', e.message);
+}
+
+// Latest known state, mirrored to the settings window over IPC.
+const updateState = {
+  status: 'idle',     // 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+  version: null,      // string version when available/downloaded
+  releaseNotes: null,
+  progress: null,     // { percent, bytesPerSecond, transferred, total }
+  error: null,
+};
+
+function broadcastUpdateState() {
+  const payload = { ...updateState, currentVersion: app.getVersion(), isPackaged: app.isPackaged };
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('update-state', payload);
+  if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.webContents.send('update-state', payload);
+}
+
+// Compare two semver strings; returns true if `next` is allowed under `scope`
+// relative to `current`. 'none' rejects everything.
+function isWithinScope(currentStr, nextStr, scope) {
+  if (!scope || scope === 'none') return false;
+  const parse = (v) => String(v).split('.').map(n => parseInt(n, 10) || 0);
+  const [cMaj, cMin] = parse(currentStr);
+  const [nMaj, nMin] = parse(nextStr);
+  if (scope === 'major') return true;
+  if (scope === 'minor') return nMaj === cMaj;
+  if (scope === 'patch') return nMaj === cMaj && nMin === cMin;
+  return false;
+}
+
+if (autoUpdater) {
+  autoUpdater.on('checking-for-update', () => {
+    updateState.status = 'checking';
+    updateState.error = null;
+    broadcastUpdateState();
+  });
+  autoUpdater.on('update-available', (info) => {
+    updateState.status = 'available';
+    updateState.version = info.version;
+    updateState.releaseNotes = typeof info.releaseNotes === 'string' ? info.releaseNotes : '';
+    updateState.error = null;
+    broadcastUpdateState();
+    // Auto-install scope decides whether to start the download right away.
+    try {
+      const scope = (loadSettings().updates || {}).autoInstallScope || 'none';
+      if (isWithinScope(app.getVersion(), info.version, scope)) {
+        autoUpdater.downloadUpdate().catch(err => console.error('Auto-download failed:', err));
+      }
+    } catch (err) {
+      console.error('Auto-install check failed:', err);
+    }
+  });
+  autoUpdater.on('update-not-available', () => {
+    updateState.status = 'not-available';
+    broadcastUpdateState();
+  });
+  autoUpdater.on('download-progress', (progress) => {
+    updateState.status = 'downloading';
+    updateState.progress = {
+      percent: progress.percent,
+      bytesPerSecond: progress.bytesPerSecond,
+      transferred: progress.transferred,
+      total: progress.total,
+    };
+    broadcastUpdateState();
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    updateState.status = 'downloaded';
+    updateState.version = info.version;
+    updateState.progress = { percent: 100, bytesPerSecond: 0, transferred: 0, total: 0 };
+    broadcastUpdateState();
+  });
+  autoUpdater.on('error', (err) => {
+    updateState.status = 'error';
+    updateState.error = String((err && err.message) || err);
+    broadcastUpdateState();
+  });
+}
+
+function checkForUpdates() {
+  if (!autoUpdater || !app.isPackaged) {
+    updateState.status = 'not-available';
+    updateState.error = app.isPackaged ? 'Updater unavailable.' : 'Updates only work in installed builds.';
+    broadcastUpdateState();
+    return Promise.resolve(false);
+  }
+  return autoUpdater.checkForUpdates().catch(err => {
+    console.error('Update check failed:', err);
+    updateState.status = 'error';
+    updateState.error = String(err.message || err);
+    broadcastUpdateState();
+    return false;
+  });
 }
 
 function startWebServer(port) {
@@ -223,6 +336,11 @@ app.whenReady().then(() => {
   if (settings.webserver && settings.webserver.enabled) {
     startWebServer(settings.webserver.port || 3000);
   }
+
+  // Kick off an update check on startup if enabled (only in packaged builds).
+  if (app.isPackaged && settings.updates && settings.updates.autoCheck !== false) {
+    setTimeout(() => checkForUpdates(), 2000);
+  }
 });
 
 app.on('window-all-closed', () => {
@@ -259,6 +377,35 @@ ipcMain.handle('save-settings', (event, settings) => {
 ipcMain.handle('open-settings', () => createSettingsWindow());
 
 ipcMain.handle('get-is-dev', () => isDev);
+
+ipcMain.handle('get-app-version', () => app.getVersion());
+
+// ─── Update IPC ────────────────────────────────────────────────────────────
+ipcMain.handle('get-update-state', () => ({
+  ...updateState,
+  currentVersion: app.getVersion(),
+  isPackaged: app.isPackaged,
+}));
+
+ipcMain.handle('check-for-updates', () => checkForUpdates());
+
+ipcMain.handle('download-update', () => {
+  if (!autoUpdater || !app.isPackaged) return false;
+  return autoUpdater.downloadUpdate().catch(err => {
+    console.error('Download failed:', err);
+    updateState.status = 'error';
+    updateState.error = String(err.message || err);
+    broadcastUpdateState();
+    return false;
+  });
+});
+
+ipcMain.handle('install-update', () => {
+  if (!autoUpdater || !app.isPackaged) return false;
+  // quitAndInstall(isSilent, isForceRunAfter)
+  autoUpdater.quitAndInstall(false, true);
+  return true;
+});
 
 ipcMain.handle('get-network-ips', () => {
   const ifaces = os.networkInterfaces();
@@ -339,6 +486,8 @@ ipcMain.handle('import-config', async () => {
         webserver: { ...defaultSettings.webserver, ...(raw.settings.webserver || {}) },
         menu: { ...defaultSettings.menu, ...(raw.settings.menu || {}) },
         secretButton: { ...defaultSettings.secretButton, ...(raw.settings.secretButton || {}) },
+        playback: { ...defaultSettings.playback, ...(raw.settings.playback || {}) },
+        updates: { ...defaultSettings.updates, ...(raw.settings.updates || {}) },
       };
       saveSettings(merged);
     }

@@ -75,6 +75,9 @@ function createWebServer({ port, uploadDir, iconDir, loadPlaylist, savePlaylist,
     const updated = { ...current, ...req.body };
     if (req.body.webserver) updated.webserver = { ...current.webserver, ...req.body.webserver };
     if (req.body.menu) updated.menu = { ...current.menu, ...req.body.menu };
+    if (req.body.secretButton) updated.secretButton = { ...current.secretButton, ...req.body.secretButton };
+    if (req.body.playback) updated.playback = { ...current.playback, ...req.body.playback };
+    if (req.body.updates) updated.updates = { ...current.updates, ...req.body.updates };
     saveSettings(updated);
     applyAutostart(updated.autostart);
     const mw = getMainWindow();

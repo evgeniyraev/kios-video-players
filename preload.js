@@ -24,4 +24,14 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on('settings-updated', (event, settings) => callback(settings));
   },
   getPathForFile: (file) => webUtils.getPathForFile(file),
+
+  // App version / updater
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+  getUpdateState: () => ipcRenderer.invoke('get-update-state'),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  onUpdateState: (callback) => {
+    ipcRenderer.on('update-state', (event, state) => callback(state));
+  },
 });

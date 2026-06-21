@@ -75,6 +75,73 @@
       margin-bottom: 14px;
     }
 
+    /* Playlist toolbar — name filter + quick-select + bulk Loop actions */
+    #playlist-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      background: #232323;
+      border: 1px solid #2e2e2e;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    #filter-input {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #ccc;
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-size: 12px;
+      min-width: 140px;
+      flex: 1;
+    }
+    #filter-input:focus { outline: none; border-color: #4a9eff; }
+    .quick-select, .bulk-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .qs-btn {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #aaa;
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .qs-btn:hover { border-color: #666; color: #ccc; }
+    #selection-count {
+      color: #4a9eff;
+      font-size: 11px;
+      flex-shrink: 0;
+      min-width: 70px;
+      text-align: right;
+    }
+    .bulk-btn {
+      border: 1px solid;
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      background: transparent;
+    }
+    .bulk-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .bulk-btn.loop-on { border-color: #4a4; color: #6c6; }
+    .bulk-btn.loop-on:hover:not(:disabled) { background: rgba(80,180,80,0.15); }
+    .bulk-btn.loop-off { border-color: #844; color: #c66; }
+    .bulk-btn.loop-off:hover:not(:disabled) { background: rgba(228,60,60,0.12); }
+
+    /* Per-row selection checkbox */
+    .row-select {
+      accent-color: #4a9eff;
+      cursor: pointer;
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+    .playlist-item.selected { background: #2f3a4d; }
+
     .playlist-item {
       display: flex;
       align-items: center;
@@ -315,6 +382,88 @@
     button.secondary { background: #383838; color: #bbb; }
     button.secondary:hover { background: #444; }
 
+    /* Updates tab */
+    .tab-badge {
+      display: none;
+      margin-left: 6px;
+      background: #4a9eff;
+      color: #fff;
+      font-size: 9px;
+      padding: 2px 5px;
+      border-radius: 8px;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .tab-badge.visible { display: inline-block; }
+
+    .update-banner {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      margin: 16px 0;
+      background: rgba(74, 158, 255, 0.08);
+      border: 1px solid rgba(74, 158, 255, 0.4);
+      border-radius: 6px;
+    }
+    .update-banner-info { flex: 1; min-width: 0; }
+    .update-banner-title { color: #4a9eff; font-size: 14px; font-weight: 600; }
+    .update-banner-sub { color: #aaa; font-size: 12px; margin-top: 2px; }
+    .update-notes {
+      color: #888;
+      font-size: 11px;
+      margin-top: 8px;
+      max-height: 80px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .update-banner-actions { flex-shrink: 0; }
+
+    .update-progress { padding: 12px 0; }
+    .update-progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+    .progress-track {
+      height: 6px;
+      background: #2a2a2a;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4a9eff, #7ea8fc);
+      transition: width 0.2s;
+    }
+
+    .update-confirm {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      margin: 16px 0;
+      background: rgba(80, 180, 80, 0.08);
+      border: 1px solid rgba(80, 180, 80, 0.4);
+      border-radius: 6px;
+    }
+    .update-confirm-text { color: #cce; font-size: 13px; }
+    .update-confirm-actions { display: flex; gap: 8px; }
+
+    .update-status-msg {
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 12px;
+      color: #888;
+      background: #222;
+      border-radius: 4px;
+    }
+    .update-status-msg.error { color: #e88; background: rgba(228, 60, 60, 0.08); }
+
     /* Global save bar — one button to save every tab */
     #global-footer {
       flex-shrink: 0;
@@ -349,6 +498,20 @@
 
     .control-input { width: 90px; text-align: right; }
     .control-select { min-width: 140px; }
+    .control-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* "Videos in a row" — number input next to an All checkbox */
+    .play-count-control { display: flex; align-items: center; gap: 10px; }
+    .all-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #aaa;
+      cursor: pointer;
+      user-select: none;
+    }
+    .all-toggle input { accent-color: #4a9eff; cursor: pointer; margin: 0; }
 
     .radio-group { display: flex; gap: 8px; flex-shrink: 0; }
 
@@ -403,11 +566,27 @@
     <button class="tab" data-tab="general">General</button>
     <button class="tab" data-tab="menu">On-Screen Menu</button>
     <button class="tab" data-tab="webserver">Web Server</button>
+    <button class="tab" data-tab="updates">Updates<span class="tab-badge" id="updates-tab-badge"></span></button>
   </div>
 
   <!-- Playlist Tab -->
   <div id="tab-playlist" class="tab-content active">
     <div id="drop-zone">Drop video files here or click to browse</div>
+    <div id="playlist-toolbar">
+      <input id="filter-input" type="text" placeholder="Filter by name…" autocomplete="off">
+      <div class="quick-select" title="Quick-select within the visible list">
+        <button class="qs-btn" data-quick="all">All</button>
+        <button class="qs-btn" data-quick="none">None</button>
+        <button class="qs-btn" data-quick="odd">Odd</button>
+        <button class="qs-btn" data-quick="even">Even</button>
+        <button class="qs-btn" data-quick="invert">Invert</button>
+      </div>
+      <span id="selection-count"></span>
+      <div class="bulk-actions">
+        <button class="bulk-btn loop-on" id="bulk-loop-on" disabled>Loop ON</button>
+        <button class="bulk-btn loop-off" id="bulk-loop-off" disabled>Loop OFF</button>
+      </div>
+    </div>
     <div id="playlist"></div>
     <div class="buttons">
       <button class="action secondary" id="clear-btn">Clear All</button>
@@ -425,6 +604,19 @@
         <input type="checkbox" id="autoplay-toggle">
         <span class="toggle-slider"></span>
       </label>
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Videos in a row</div>
+        <div class="setting-desc">When Autoplay is on, how many videos to play consecutively before stopping. Use <strong>All</strong> to loop through the entire playlist.</div>
+      </div>
+      <div class="play-count-control">
+        <input type="number" class="control-input" id="play-count" min="1" step="1" value="1">
+        <label class="all-toggle" title="Play through the whole playlist">
+          <input type="checkbox" id="play-count-all">
+          <span>All</span>
+        </label>
+      </div>
     </div>
     <div class="setting-row">
       <div class="setting-info">
@@ -571,6 +763,71 @@
     </div>
   </div>
 
+  <!-- Updates Tab -->
+  <div id="tab-updates" class="tab-content">
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Current version</div>
+        <div class="setting-desc" id="current-version">…</div>
+      </div>
+      <button class="action secondary" id="check-updates-btn">Check for updates</button>
+    </div>
+
+    <div id="update-banner" class="update-banner" style="display:none;">
+      <div class="update-banner-info">
+        <div class="update-banner-title" id="update-banner-title">Update available</div>
+        <div class="update-banner-sub" id="update-banner-sub"></div>
+        <div class="update-notes" id="update-notes"></div>
+      </div>
+      <div class="update-banner-actions">
+        <button class="action primary" id="update-action-btn">Update</button>
+      </div>
+    </div>
+
+    <div id="update-progress" class="update-progress" style="display:none;">
+      <div class="update-progress-label">
+        <span id="progress-label">Downloading…</span>
+        <span id="progress-speed"></span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <div id="update-confirm" class="update-confirm" style="display:none;">
+      <div class="update-confirm-text">
+        Update downloaded. Installing in <span id="install-countdown">5</span>s…
+      </div>
+      <div class="update-confirm-actions">
+        <button class="action secondary" id="install-cancel-btn">Cancel</button>
+        <button class="action primary" id="install-now-btn">Install now</button>
+      </div>
+    </div>
+
+    <div id="update-status-msg" class="update-status-msg" style="display:none;"></div>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Check on startup</div>
+        <div class="setting-desc">Automatically look for new versions when SimplePlayer launches.</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="updates-autocheck-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Auto-install scope</div>
+        <div class="setting-desc">Up to which kind of change should download automatically without asking. Cancel is still offered before install.</div>
+      </div>
+      <select class="control-select" id="updates-scope">
+        <option value="none">None (notify only)</option>
+        <option value="patch">Patch (x.y.Z)</option>
+        <option value="minor">Minor + patch (x.Y.z)</option>
+        <option value="major">Any (X.y.z)</option>
+      </select>
+    </div>
+  </div>
+
   <!-- Global save bar — always visible, saves every tab -->
   <div id="global-footer">
     <span id="save-status">Saved</span>
@@ -583,10 +840,15 @@
     let dragIndex = null;
     let listeningIndex = null;
     let keyListener = null;
+    // Bulk-edit state — selection is a Set of playlist item refs (not indices)
+    // so it survives drag-reorder. nameFilter narrows the visible subset.
+    let selection = new Set();
+    let nameFilter = '';
 
     const videoExtensions = ['mp4', 'webm', 'mkv', 'avi', 'mov', 'wmv', 'flv'];
+    // Numeric keys are claimed by the dialer (press 0–9, then Enter to play),
+    // so they're no longer assignable as direct per-video hotkeys.
     const AVAILABLE_KEYS = [
-      '1','2','3','4','5','6','7','8','9','0',
       'a','b','c','d','e','f','g','h','i','j','k','l','m',
       'n','o','p','q','r','s','t','u','v','w','x','y','z',
     ];
@@ -605,6 +867,7 @@
     Promise.all([window.api.getPlaylist(), window.api.getSettings()]).then(([list, cfg]) => {
       playlist = list;
       settings = cfg;
+      selection.clear(); // refs from a previous load would be stale
       renderPlaylist();
       applySettingsToUI();
     });
@@ -617,8 +880,26 @@
         tab.classList.add('active');
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
         cancelKeyListening();
+        // Pause the install countdown when the user navigates away — we don't
+        // want an unattended auto-install to fire while they're editing
+        // something on another tab.
+        if (tab.dataset.tab !== 'updates') {
+          stopInstallCountdown();
+        } else if (typeof latestUpdateState !== 'undefined' && latestUpdateState && latestUpdateState.status === 'downloaded') {
+          // Returning to the Updates tab with a download still pending
+          // restarts the countdown.
+          renderUpdateState(latestUpdateState);
+        }
       });
     });
+
+    // Make stopInstallCountdown available to tab handler before its definition.
+    function stopInstallCountdown() {
+      if (typeof installCountdownTimer !== 'undefined' && installCountdownTimer) {
+        clearInterval(installCountdownTimer);
+        installCountdownTimer = null;
+      }
+    }
 
     function applySettingsToUI() {
       document.getElementById('autoplay-toggle').checked = !!settings.autoplay;
@@ -628,6 +909,17 @@
       document.getElementById('port-input').value = ws.port || 3000;
       const sb = settings.secretButton || {};
       document.getElementById('secret-corner').value = sb.corner || 'top-left';
+      const pb = settings.playback || {};
+      // playCount=0 means "All" (loop through whole playlist).
+      const pcRaw = parseInt(pb.playCount);
+      const isAll = pcRaw === 0;
+      const pcInput = document.getElementById('play-count');
+      document.getElementById('play-count-all').checked = isAll;
+      pcInput.disabled = isAll;
+      pcInput.value = isAll ? '' : Math.max(1, pcRaw || 1);
+      const upd = settings.updates || {};
+      document.getElementById('updates-autocheck-toggle').checked = upd.autoCheck !== false;
+      document.getElementById('updates-scope').value = upd.autoInstallScope || 'none';
       updateServerInfo();
       applyMenuToUI();
     }
@@ -753,6 +1045,17 @@
     document.getElementById('menu-enabled-toggle').addEventListener('change', updateMenuDisabled);
     document.getElementById('menu-edge').addEventListener('change', updateOffsetDesc);
 
+    // "All" overrides the numeric Videos-in-a-row input.
+    document.getElementById('play-count-all').addEventListener('change', (e) => {
+      const pcInput = document.getElementById('play-count');
+      pcInput.disabled = e.target.checked;
+      if (e.target.checked) {
+        pcInput.value = '';
+      } else if (!pcInput.value) {
+        pcInput.value = 1;
+      }
+    });
+
     // Collect every form value across every tab into the settings object,
     // then persist settings + playlist together. One Save to rule them all.
     async function saveAll() {
@@ -785,6 +1088,20 @@
       settings.webserver = {
         enabled: document.getElementById('webserver-toggle').checked,
         port: parseInt(document.getElementById('port-input').value) || 3000,
+      };
+
+      // Playback — 0 means "All" (loop through entire playlist)
+      const isAllPC = document.getElementById('play-count-all').checked;
+      settings.playback = {
+        ...(settings.playback || {}),
+        playCount: isAllPC ? 0 : Math.max(1, parseInt(document.getElementById('play-count').value) || 1),
+      };
+
+      // Updates
+      settings.updates = {
+        ...(settings.updates || {}),
+        autoCheck: document.getElementById('updates-autocheck-toggle').checked,
+        autoInstallScope: document.getElementById('updates-scope').value || 'none',
       };
 
       try {
@@ -898,9 +1215,67 @@
       return true;
     }
 
+    // ─── Bulk-edit helpers ───────────────────────────────────────────────────
+    function isVisible(i) {
+      if (!nameFilter) return true;
+      const name = (playlist[i].path || '').toLowerCase();
+      return name.includes(nameFilter.toLowerCase());
+    }
+
+    function visibleIndices() {
+      const out = [];
+      for (let i = 0; i < playlist.length; i++) if (isVisible(i)) out.push(i);
+      return out;
+    }
+
+    function updateSelectionCount() {
+      const count = selection.size;
+      const label = document.getElementById('selection-count');
+      const onBtn = document.getElementById('bulk-loop-on');
+      const offBtn = document.getElementById('bulk-loop-off');
+      if (label) label.textContent = count > 0 ? `${count} selected` : '';
+      if (onBtn) onBtn.disabled = count === 0;
+      if (offBtn) offBtn.disabled = count === 0;
+    }
+
+    // Quick-select operates on the visible subset. "All / None / Odd / Even"
+    // *replace* the selection state of each visible row; "Invert" toggles it.
+    // Items hidden by the name filter keep whatever selection they had.
+    function applyQuickSelect(kind) {
+      const indices = visibleIndices();
+      for (const i of indices) {
+        const item = playlist[i];
+        const isOdd = ((i + 1) % 2) === 1;
+        if (kind === 'all')         selection.add(item);
+        else if (kind === 'none')   selection.delete(item);
+        else if (kind === 'odd')    isOdd ? selection.add(item) : selection.delete(item);
+        else if (kind === 'even')   isOdd ? selection.delete(item) : selection.add(item);
+        else if (kind === 'invert') selection.has(item) ? selection.delete(item) : selection.add(item);
+      }
+      renderPlaylist();
+    }
+
+    function applyBulkLoop(value) {
+      for (const item of selection) item.loop = !!value;
+      renderPlaylist();
+    }
+
+    document.getElementById('filter-input').addEventListener('input', (e) => {
+      nameFilter = e.target.value;
+      renderPlaylist();
+    });
+
+    document.querySelectorAll('#playlist-toolbar .qs-btn').forEach(btn => {
+      btn.addEventListener('click', () => applyQuickSelect(btn.dataset.quick));
+    });
+
+    document.getElementById('bulk-loop-on').addEventListener('click', () => applyBulkLoop(true));
+    document.getElementById('bulk-loop-off').addEventListener('click', () => applyBulkLoop(false));
+
     function renderPlaylist() {
       if (playlist.length === 0) {
         playlistEl.innerHTML = '<div class="empty-msg">No videos added yet</div>';
+        updateSelectionCount();
         return;
       }
 
@@ -910,6 +1285,8 @@
         const hasKey = !!item.key;
         const keyLabel = hasKey ? formatKey(item.key) : 'No key';
         const isHome = (i === homeIdx);
+        const visible = isVisible(i);
+        const selected = selection.has(item);
         let iconButton;
         if (isHome) {
           iconButton = `<button class="icon-btn has-icon" disabled title="Home icon — change in On-Screen Menu tab">${homeIconHTML()}</button>`;
@@ -920,7 +1297,10 @@
             : '+';
           iconButton = `<button class="icon-btn ${hasIcon ? 'has-icon' : ''}" data-icon="${i}" title="${hasIcon ? 'Replace icon' : 'Add icon'}">${iconHTML}</button>`;
         }
-        return `<div class="playlist-item" draggable="true" data-index="${i}">
+        const rowStyle = visible ? '' : 'display:none;';
+        const rowClass = `playlist-item${selected ? ' selected' : ''}`;
+        return `<div class="${rowClass}" draggable="true" data-index="${i}" style="${rowStyle}">
+          <input type="checkbox" class="row-select" data-select="${i}" ${selected ? 'checked' : ''} title="Select for bulk action">
           <span class="item-index">${i + 1}.</span>
           ${iconButton}
           <span class="item-name" title="${item.path}">${name}</span>
@@ -932,6 +1312,21 @@
           <button class="remove-btn" data-index="${i}">&times;</button>
         </div>`;
       }).join('');
+
+      // Row-selection checkboxes
+      document.querySelectorAll('.row-select').forEach(cb => {
+        cb.addEventListener('click', (e) => e.stopPropagation());
+        cb.addEventListener('change', () => {
+          const item = playlist[parseInt(cb.dataset.select)];
+          if (!item) return;
+          if (cb.checked) selection.add(item);
+          else selection.delete(item);
+          // Update the row highlight without a full re-render.
+          const row = cb.closest('.playlist-item');
+          if (row) row.classList.toggle('selected', cb.checked);
+          updateSelectionCount();
+        });
+      });
 
       // Icon pick / clear
       document.querySelectorAll('.icon-btn').forEach(btn => {
@@ -1030,7 +1425,10 @@
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const homeVideo = captureHomeVideo();
-          playlist.splice(parseInt(btn.dataset.index), 1);
+          const removed = playlist.splice(parseInt(btn.dataset.index), 1);
+          // Drop the removed item from the bulk-selection set so the count
+          // stays accurate.
+          if (removed[0]) selection.delete(removed[0]);
           rebindHomeIndex(homeVideo);
           cancelKeyListening();
           renderPlaylist();
@@ -1044,6 +1442,8 @@
         const current = (settings.menu && settings.menu.homeIndex != null) ? settings.menu.homeIndex : 0;
         refreshHomeIndexOptions(current);
       }
+
+      updateSelectionCount();
     }
 
     // Drop zone
@@ -1076,6 +1476,7 @@
     // Clear all
     document.getElementById('clear-btn').addEventListener('click', () => {
       playlist = [];
+      selection.clear();
       cancelKeyListening();
       renderPlaylist();
     });
@@ -1098,11 +1499,141 @@
       const [list, cfg] = await Promise.all([window.api.getPlaylist(), window.api.getSettings()]);
       playlist = list;
       settings = cfg;
+      selection.clear(); // refs from before the import are stale
       renderPlaylist();
       applySettingsToUI();
       btn.textContent = 'Imported!';
       setTimeout(() => { btn.textContent = 'Import…'; }, 1500);
     });
+
+    // ─── Updates tab ─────────────────────────────────────────────────────────
+    let installCountdownTimer = null;
+    let installCountdownSeconds = 5;
+    let latestUpdateState = null;
+
+    function isUpdatesTabActive() {
+      const t = document.getElementById('tab-updates');
+      return t && t.classList.contains('active');
+    }
+
+    function formatBytes(bps) {
+      if (!bps || !Number.isFinite(bps)) return '';
+      const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+      let i = 0;
+      let v = bps;
+      while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+      return `${v.toFixed(1)} ${units[i]}`;
+    }
+
+    function renderUpdateState(state) {
+      latestUpdateState = state;
+      const banner = document.getElementById('update-banner');
+      const progress = document.getElementById('update-progress');
+      const confirm = document.getElementById('update-confirm');
+      const msg = document.getElementById('update-status-msg');
+      const badge = document.getElementById('updates-tab-badge');
+
+      document.getElementById('current-version').textContent = state.currentVersion || '—';
+
+      // Default: hide everything, then turn on what's relevant.
+      banner.style.display = 'none';
+      progress.style.display = 'none';
+      confirm.style.display = 'none';
+      msg.style.display = 'none';
+      msg.classList.remove('error');
+      badge.classList.remove('visible');
+
+      if (state.status === 'available') {
+        banner.style.display = 'flex';
+        document.getElementById('update-banner-title').textContent = `Update available: ${state.version}`;
+        document.getElementById('update-banner-sub').textContent = `Currently on ${state.currentVersion}.`;
+        document.getElementById('update-notes').textContent = state.releaseNotes || '';
+        const actionBtn = document.getElementById('update-action-btn');
+        actionBtn.textContent = 'Update';
+        actionBtn.disabled = false;
+        badge.textContent = '1';
+        badge.classList.add('visible');
+      } else if (state.status === 'downloading') {
+        progress.style.display = 'block';
+        const pct = Math.max(0, Math.min(100, state.progress ? state.progress.percent : 0));
+        document.getElementById('progress-fill').style.width = pct.toFixed(0) + '%';
+        document.getElementById('progress-label').textContent = `Downloading ${state.version || ''} — ${pct.toFixed(0)}%`;
+        document.getElementById('progress-speed').textContent = formatBytes(state.progress && state.progress.bytesPerSecond);
+      } else if (state.status === 'downloaded') {
+        confirm.style.display = 'flex';
+        // Only auto-run the countdown when the user is actually viewing the
+        // Updates tab — otherwise wait for them to come back to it.
+        if (isUpdatesTabActive()) startInstallCountdown();
+        badge.textContent = '✓';
+        badge.classList.add('visible');
+      } else if (state.status === 'checking') {
+        msg.style.display = 'block';
+        msg.textContent = 'Checking for updates…';
+      } else if (state.status === 'not-available') {
+        if (state.error) {
+          msg.style.display = 'block';
+          msg.textContent = state.error;
+        } else if (state.isPackaged) {
+          msg.style.display = 'block';
+          msg.textContent = `You're up to date.`;
+        }
+      } else if (state.status === 'error') {
+        msg.style.display = 'block';
+        msg.classList.add('error');
+        msg.textContent = state.error || 'Update failed.';
+      }
+
+      if (!state.isPackaged) {
+        msg.style.display = 'block';
+        msg.textContent = 'Updates only work in installed builds.';
+      }
+    }
+
+    function startInstallCountdown() {
+      stopInstallCountdown();
+      installCountdownSeconds = 5;
+      document.getElementById('install-countdown').textContent = installCountdownSeconds;
+      installCountdownTimer = setInterval(() => {
+        installCountdownSeconds--;
+        document.getElementById('install-countdown').textContent = installCountdownSeconds;
+        if (installCountdownSeconds <= 0) {
+          stopInstallCountdown();
+          window.api.installUpdate();
+        }
+      }, 1000);
+    }
+
+    document.getElementById('check-updates-btn').addEventListener('click', () => {
+      window.api.checkForUpdates();
+    });
+
+    document.getElementById('update-action-btn').addEventListener('click', () => {
+      const btn = document.getElementById('update-action-btn');
+      btn.disabled = true;
+      btn.textContent = 'Starting…';
+      window.api.downloadUpdate();
+    });
+
+    document.getElementById('install-cancel-btn').addEventListener('click', () => {
+      stopInstallCountdown();
+      // Hide the confirm row; the user can manually install later with the button.
+      const confirm = document.getElementById('update-confirm');
+      confirm.innerHTML = `
+        <div class="update-confirm-text">Update ready to install.</div>
+        <div class="update-confirm-actions">
+          <button class="action primary" id="install-now-late-btn">Install now</button>
+        </div>`;
+      document.getElementById('install-now-late-btn').addEventListener('click', () => window.api.installUpdate());
+    });
+
+    document.getElementById('install-now-btn').addEventListener('click', () => {
+      stopInstallCountdown();
+      window.api.installUpdate();
+    });
+
+    // Receive state pushes from main process and pull the initial state.
+    window.api.onUpdateState(renderUpdateState);
+    window.api.getUpdateState().then(renderUpdateState);
 
   </script>
 </body>

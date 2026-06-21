@@ -1,6 +1,6 @@
 {
   "name": "simpleplayer",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Simple fullscreen video playlist player",
   "main": "main.js",
   "scripts": {
@@ -22,13 +22,26 @@
     "asarUnpack": [
       "server/public/**/*"
     ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "evgeniyraev",
+        "repo": "kios-video-players"
+      }
+    ],
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico"
     },
     "mac": {
-      "target": "dmg",
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage"
     },
     "nsis": {
       "oneClick": true,
@@ -39,6 +52,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "express": "^4.18.2",
     "multer": "^2.1.1",
     "qrcode": "^1.5.4"

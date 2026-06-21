@@ -64,6 +64,7 @@
       z-index: 999;
     }
 
+
     /* On-Screen Menu (hologram rail) */
     #osm {
       position: fixed;
@@ -152,10 +153,16 @@
     let currentIndex = 0;
     let hasStarted = false;
     let autoplay = false;
+    let playCount = 1;          // how many consecutive videos per manual selection (1 = current behavior)
+    let playedSoFar = 0;        // counter — incremented on 'ended' inside a sequence
     let menuConfig = { enabled: false, edge: 'left', offset: 100, homeStyle: 'house', homeIcon: '', homeIndex: 0, showHelper: true, helperIcon: '' };
     let secretCorner = 'top-left';
     let holdTimer = null;
     let statusTimer = null;
+
+    // Number dialer state — collects digits, on Enter plays the resolved video.
+    // No on-screen feedback while typing (intentional — keeps the player clean).
+    let dialBuffer = '';
 
     const CORNER_LABELS = {
       'top-left': 'top-left',
@@ -203,6 +210,9 @@
 
     function loadAndPlay(index) {
       if (!playlist.length) return;
+      // Manual selection — reset the in-a-row counter so the next N consecutive
+      // videos play starting from this one.
+      playedSoFar = 1;
       loadVideo(index);
       player.play();
       hasStarted = true;
@@ -296,11 +306,27 @@
       renderMenu();
     }
 
+    // Advance one video without resetting the play counter (used by play-count
+    // sequences and arrow navigation). Wraps to keep kiosk playback continuous.
+    function advanceTo(index) {
+      const safe = ((index % playlist.length) + playlist.length) % playlist.length;
+      loadVideo(safe);
+      player.play();
+      hasStarted = true;
+      showStatus('');
+      renderMenu();
+    }
+
     function applyConfig(cfg) {
       autoplay = !!cfg.autoplay;
       menuConfig = { ...menuConfig, ...(cfg.menu || {}) };
       const corner = cfg.secretButton && cfg.secretButton.corner ? cfg.secretButton.corner : 'top-left';
       applySecretButtonPosition(corner);
+      const pb = cfg.playback || {};
+      // 0 is the sentinel for "All" (loop through entire playlist).
+      // Anything else gets clamped to at least 1.
+      const raw = parseInt(pb.playCount);
+      playCount = (raw === 0) ? 0 : Math.max(1, raw || 1);
     }
 
     // Load playlist and settings together
@@ -356,12 +382,80 @@
     // Video ended
     player.addEventListener('ended', () => {
       if (!autoplay) return; // stay on last frame
-      playNext();
+      // playCount === 0 → "All": continue advancing forever (with the
+      // playNext "tap to replay" stop at the end of the playlist).
+      if (playCount === 0) {
+        playNext();
+        return;
+      }
+      // Specific count — play N consecutive then stop on the last frame.
+      if (playedSoFar < playCount) {
+        playedSoFar++;
+        advanceTo(currentIndex + 1);
+      }
     });
 
-    // Keyboard shortcuts assigned to videos
+    // ─── Number dialer ──────────────────────────────────────────────────────
+    // Press 0–9 to type, Enter to play, Escape to clear. The number of relevant
+    // digits is determined by the playlist size (1 digit for ≤9, 2 for ≤99,
+    // etc.) — extra leading digits are dropped so a stale buffer can't
+    // accidentally play a wrong video.
+    function dialDigitsForPlaylist() {
+      return Math.max(1, String(Math.max(playlist.length, 1)).length);
+    }
+
+    function clearDial() {
+      dialBuffer = '';
+    }
+
+    function pushDigit(d) {
+      const max = dialDigitsForPlaylist();
+      dialBuffer = (dialBuffer + d).slice(-max);
+    }
+
+    function commitDial() {
+      const raw = dialBuffer;
+      clearDial();
+      if (!raw) return;
+      const num = parseInt(raw, 10);
+      // 1-indexed to match the visible playlist numbering in settings.
+      if (Number.isFinite(num) && num >= 1 && num <= playlist.length) {
+        loadAndPlay(num - 1);
+      }
+    }
+
+    // ─── Keyboard ───────────────────────────────────────────────────────────
     document.addEventListener('keydown', (e) => {
       if (!playlist.length) return;
+
+      // Number dialer claims the digits 0–9 and Enter/Escape.
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        pushDigit(e.key);
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitDial();
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (dialBuffer) { e.preventDefault(); clearDial(); return; }
+      }
+
+      // Arrows — prev/next with wrap.
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        loadAndPlay(((currentIndex + 1) % playlist.length + playlist.length) % playlist.length);
+        return;
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        loadAndPlay(((currentIndex - 1) % playlist.length + playlist.length) % playlist.length);
+        return;
+      }
+
+      // Per-video hotkeys (letters only — numeric hotkeys are claimed by the dialer).
       const index = playlist.findIndex(v => v.key && v.key === e.key);
       if (index !== -1) {
         loadAndPlay(index);
