@@ -1,6 +1,6 @@
 {
   "name": "simpleplayer",
-  "version": "2.4.2",
+  "version": "2.4.3",
   "description": "Simple fullscreen video playlist player",
   "main": "main.js",
   "scripts": {
@@ -31,7 +31,8 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "mac": {
       "target": [
